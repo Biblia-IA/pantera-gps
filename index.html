@@ -256,8 +256,27 @@ function cabeca(x, y, tam) {
   cx.fillStyle = PAL.focinho; cx.fill(NARIZ); cx.strokeStyle = PAL.focinho; cx.lineWidth = 1.8; cx.lineCap = 'round'; cx.stroke(BOCA);
   cx.restore();
 }
+// símbolo P7 da Balestra (ponta forjada com o fio de luz central e o M da montanha na base), girando com o rumo
+const P7E = new Path2D('M48.6 8L48.6 62L18 88Z'), P7D = new Path2D('M51.4 8L82 88L51.4 62Z');
+function setaBC(x, y, ang) {
+  cx.save(); cx.translate(x, y); cx.rotate(ang);
+  const g = cx.createRadialGradient(0, 0, 8, 0, 0, 80); g.addColorStop(0, 'rgba(233,239,245,.38)'); g.addColorStop(1, 'rgba(233,239,245,0)');
+  cx.fillStyle = g; cx.beginPath(); cx.moveTo(0, 0); cx.arc(0, 0, 80, -Math.PI / 2 - 0.42, -Math.PI / 2 + 0.42); cx.closePath(); cx.fill();
+  const s = 0.62; cx.scale(s, s); cx.translate(-50, -54);
+  const cromo = cx.createLinearGradient(18, 8, 82, 88);
+  for (const [o, c] of [[0, '#FFFFFF'], [0.35, '#D9DEE4'], [0.55, '#8E98A3'], [0.75, '#E6E9ED'], [1, '#A7B0BA']]) cromo.addColorStop(o, c);
+  const aco = cx.createLinearGradient(82, 8, 18, 88);
+  for (const [o, c] of [[0, '#C3CAD2'], [0.5, '#5E6874'], [1, '#8D97A2']]) aco.addColorStop(o, c);
+  cx.lineJoin = 'round'; cx.strokeStyle = '#0D0F12'; cx.lineWidth = 9; cx.stroke(P7E); cx.stroke(P7D);
+  cx.shadowColor = 'rgba(233,239,245,.75)'; cx.shadowBlur = 22;
+  cx.fillStyle = cromo; cx.fill(P7E); cx.fillStyle = aco; cx.fill(P7D);
+  cx.shadowBlur = 10; cx.shadowColor = '#fff'; cx.strokeStyle = '#fff'; cx.lineWidth = 2; cx.lineCap = 'round';
+  cx.beginPath(); cx.moveTo(50, 4); cx.lineTo(50, 64); cx.stroke();
+  cx.restore();
+}
 function pantera(p, ang) {
   const [x, y] = p;
+  if (BC) return setaBC(x, y, ang);
   cx.save(); cx.translate(x, y); cx.rotate(ang);
   const g = cx.createRadialGradient(0, 0, 12, 0, 0, 70); g.addColorStop(0, 'rgba(' + PAL.cone + ',.42)'); g.addColorStop(1, 'rgba(' + PAL.cone + ',0)');
   cx.fillStyle = g; cx.beginPath(); cx.moveTo(0, 0); cx.arc(0, 0, 70, -Math.PI / 2 - 0.45, -Math.PI / 2 + 0.45); cx.closePath(); cx.fill();
