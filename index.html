@@ -321,9 +321,20 @@ function calcular(silencioso) {
   for (const s of rota.subidas.slice(0, 3)) aviso(`Subida de ~${s.grau}% na ${s.rua} (${km(s.m)})` + (garupa ? ': talvez precise descer e empurrar' : ''));
   if (rota.subidas.length > 3) aviso(`Mais ${rota.subidas.length - 3} trechos de subida (roxo no mapa)`);
   if (rota.cargas > 0.45) aviso(rota.cargas > 1 ? 'Não cabe em uma carga' : 'Ida e volta pode não caber em uma carga: confira a bateria');
+  for (const [n, m] of Object.entries(rota.duvidas)) aviso(`Mão não confirmada no mapa: ${n} (${km(m)}). Confira a placa`);
+  aviso('Sempre confira a placa de mão. Se a rota mandar pra contramão, toque em "Contramão aqui"');
   if (pico) aviso('Horário de pico: priorizei ruas mais calmas', true);
-  folha(el('b', nomeDestino), num, ...avisos, acoes(['Começar', comecar, 'pri'], botaoGarupa(), ['Fechar', limpar]));
+  folha(el('b', nomeDestino), num, ...avisos, acoes(['Abrir no Google Maps', abrirGoogle, 'pri'], ['Começar aqui', comecar], botaoGarupa(), ['Fechar', limpar]));
   enquadrar();
+}
+// o Google respeita a mão das ruas; as paradas seguram ele no nosso caminho (longe das avenidas)
+function abrirGoogle() {
+  const l = rota.linha, ac = [0];
+  for (let i = 1; i < l.length; i++) ac[i] = ac[i - 1] + Rotas.metros(l[i - 1], l[i]);
+  const f = p => p[0].toFixed(6) + ',' + p[1].toFixed(6), para = [];
+  for (const q of [0.25, 0.5, 0.75]) { const i = ac.findIndex(a => a >= ac.at(-1) * q); para.push(f(l[i])); }
+  const u = 'https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=' + f(l[0]) + '&destination=' + f(l.at(-1)) + '&waypoints=' + encodeURIComponent(para.join('|'));
+  const a = document.createElement('a'); a.href = u; a.target = '_blank'; a.rel = 'noopener'; document.body.append(a); a.click(); a.remove();
 }
 function enquadrar() {
   const p = rota.linha.map(xy), xs = p.map(a => a[0]), ys = p.map(a => a[1]);
@@ -368,12 +379,12 @@ function andou(p) {
   const m = manobras.find(m => m.s > onde + 5) || manobras.at(-1);
   $('#manobra').textContent = `Em ${km(m.s - onde)}: ${m.texto}`;
   folha(el('b', `${km(falta)} · ${Math.max(1, Math.round(falta / 1000 / 25 * 60))} min até ${nomeDestino}`),
-    acoes(['Parar', () => { parar(); calcular(); }], ['Buraco aqui', () => marcar2('buraco')], ['Interditado', () => marcar2('interditado')]));
+    acoes(['Parar', () => { parar(); calcular(); }], ['Buraco aqui', () => marcar2('buraco')], ['Interditado', () => marcar2('interditado')], ['Contramão aqui', () => marcar2('contramao')]));
 }
 function marcar2(tipo) {
   const a = (rumo * Math.PI) / 180, d = tipo === 'interditado' ? 25 : 0;
-  marcas.push({ tipo, p: [eu[0] + d * Math.cos(a) / KY, eu[1] + d * Math.sin(a) / KX] }); gravar('marcas', marcas);
-  if (tipo === 'interditado') calcular(true);
+  marcas.push({ tipo, rumo, p: [eu[0] + d * Math.cos(a) / KY, eu[1] + d * Math.sin(a) / KX] }); gravar('marcas', marcas);
+  if (tipo !== 'buraco') calcular(true);
   desenhar();
 }
 async function comecar() {
