@@ -304,7 +304,15 @@ function calcular(silencioso) {
   if (!de) { ligarGps(); folha(el('b', 'De onde você sai?'), el('p', 'Libere a localização ou toque no mapa e escolha "Sair daqui".'), acoes(['Fechar', () => folha()])); desenhar(); return; }
   const h = new Date().getHours() + new Date().getMinutes() / 60;
   const pico = (h >= 7 && h < 8.5) || (h >= 11.5 && h < 13.5) || (h >= 17 && h < 19);
-  rota = Rotas.rota(G, de, destino, { garupa, pico, marcas });
+  // rota validada no Google: saída perto de um destino salvo e chegada num destino salvo, sem marcas no caminho
+  const salvo = q => lugares().find(([, p]) => p && Rotas.metros(p, q) < 200);
+  const daqui = salvo(de), praLa = salvo(destino);
+  if (daqui && praLa && daqui !== praLa && !navegando) {
+    rota = Rotas.rota(G, daqui[1], praLa[1], { garupa });
+    const comMarcas = marcas.length ? Rotas.rota(G, daqui[1], praLa[1], { garupa, marcas }) : rota;
+    rota.validada = comMarcas && comMarcas.linha.length === rota.linha.length;
+    if (!rota.validada) rota = comMarcas;
+  } else rota = Rotas.rota(G, de, destino, { garupa, pico, marcas });
   if (!rota) { folha(el('b', 'Não achei caminho até ' + nomeDestino), acoes(['Fechar', limpar])); return; }
   preparar();
   if (silencioso) return desenhar();
@@ -321,10 +329,12 @@ function calcular(silencioso) {
   for (const s of rota.subidas.slice(0, 3)) aviso(`Subida de ~${s.grau}% na ${s.rua} (${km(s.m)})` + (garupa ? ': talvez precise descer e empurrar' : ''));
   if (rota.subidas.length > 3) aviso(`Mais ${rota.subidas.length - 3} trechos de subida (roxo no mapa)`);
   if (rota.cargas > 0.45) aviso(rota.cargas > 1 ? 'Não cabe em uma carga' : 'Ida e volta pode não caber em uma carga: confira a bateria');
-  for (const [n, m] of Object.entries(rota.duvidas)) aviso(`Mão não confirmada no mapa: ${n} (${km(m)}). Confira a placa`);
-  aviso('A navegação é feita pelo Google Maps, que respeita a mão das ruas. Este app escolhe o caminho longe das avenidas.', true);
+  if (rota && rota.validada) aviso('Rota validada no Google: sem contramão (conferida em ' + new Date(MAPA.validado).toLocaleDateString('pt-BR') + ')', true);
+  else aviso('Rota não validada: use o Google Maps pra navegar');
+  if (!rota.validada) for (const [n, m] of Object.entries(rota.duvidas)) aviso(`Mão não confirmada no mapa: ${n} (${km(m)}). Confira a placa`);
+  if (!rota.validada) aviso('A navegação é feita pelo Google Maps, que respeita a mão das ruas. Este app escolhe o caminho longe das avenidas.', true);
   if (pico) aviso('Horário de pico: priorizei ruas mais calmas', true);
-  folha(el('b', nomeDestino), num, ...avisos, acoes(['Navegar pelo Google Maps', abrirGoogle, 'pri'], botaoGarupa(), ['Fechar', limpar]));
+  folha(el('b', nomeDestino), num, ...avisos, (rota.validada ? acoes(['Navegar no app', comecar, 'pri'], ['Google Maps', abrirGoogle], botaoGarupa(), ['Fechar', limpar]) : acoes(['Navegar pelo Google Maps', abrirGoogle, 'pri'], botaoGarupa(), ['Fechar', limpar])));
   enquadrar();
 }
 // o Google respeita a mão das ruas; as paradas seguram ele no nosso caminho (longe das avenidas)
@@ -373,7 +383,7 @@ function andou(p) {
     if (d < melhor) { melhor = d; onde = acum[i - 1] + Math.min(Rotas.metros(rota.linha[i - 1], p), acum[i] - acum[i - 1]); }
   }
   fora = melhor > 40 ? fora + 1 : 0;
-  if (fora >= 3) { fora = 0; calcular(true); return; }
+  if (fora >= 3) { fora = 0; if (rota.validada) { $('#manobra').textContent = '⚠ Fora da rota validada: volte pra linha amarela ou abra no Google Maps'; return; } calcular(true); return; }
   const falta = acum.at(-1) - onde;
   if (falta < 25) { $('#manobra').textContent = '🏁 Você chegou: ' + nomeDestino; return; }
   const m = manobras.find(m => m.s > onde + 5) || manobras.at(-1);

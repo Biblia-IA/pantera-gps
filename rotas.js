@@ -15,10 +15,16 @@
       g.push(pos[b]);
       return { a, b, m, c, nome: M.nomes[nome], mao, vel, evitar, duvida, g };
     });
+    // correções conferidas na API do Google: sentido proibido e trechos a evitar
+    const C = M.correcoes || {}, bloq = new Set(C.bloq || []), penal = new Set(C.penal || []);
+    const K = n => M.nos[n][0] + ',' + M.nos[n][1];
     const viz = pos.map(() => []);
     trechos.forEach((t, i) => {
-      if (t.mao >= 0) viz[t.a].push([t.b, i, 1]);
-      if (t.mao <= 0) viz[t.b].push([t.a, i, -1]);
+      const ida = K(t.a) + '>' + K(t.b), volta = K(t.b) + '>' + K(t.a);
+      t.ida = ida; t.volta = volta;
+      if (penal.has(ida) || penal.has(volta)) t.penal = 20;
+      if (t.mao >= 0 && !bloq.has(ida)) viz[t.a].push([t.b, i, 1]);
+      if (t.mao <= 0 && !bloq.has(volta)) viz[t.b].push([t.a, i, -1]);
     });
     return { pos, alt, trechos, viz };
   }
@@ -51,6 +57,7 @@
     let f = FATOR[t.c];
     if (t.evitar) f = 9;
     if (t.duvida) f = Math.max(f, 8);
+    if (t.penal) f *= t.penal;
     if (t.vel > 40) f = Math.max(f, t.vel >= 60 ? 6 : 3);
     if (op.pico && t.c >= 2 && t.c <= 4) f *= 1.3;
     const sobe = (G.alt[t.b] - G.alt[t.a]) * sentido, grau = sobe / Math.max(t.m, 40);
