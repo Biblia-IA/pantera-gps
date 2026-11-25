@@ -118,22 +118,31 @@ body.nav #gps{bottom:auto;top:calc(env(safe-area-inset-top) + 104px)}
 
 /* cadeado */
 #cadeado{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:32px;
-  background:linear-gradient(var(--grade) 1px,transparent 1px) 0 0/48px 48px,linear-gradient(90deg,var(--grade) 1px,transparent 1px) 0 0/48px 48px,radial-gradient(ellipse at 50% 30%,#27303a,#0e1115 55%,#0b0d10);transition:opacity .4s,transform .4s}
-[data-tema=claro] #cadeado{background:linear-gradient(var(--grade) 1px,transparent 1px) 0 0/48px 48px,linear-gradient(90deg,var(--grade) 1px,transparent 1px) 0 0/48px 48px,radial-gradient(ellipse at 50% 30%,#fff,#eef1f4 60%,#dfe5eb)}
+  /* degradê da prata (em cima) pro grafite (embaixo), como uma chapa de metal; grade fina por cima */
+  background:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/48px 48px,linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/48px 48px,
+    linear-gradient(180deg,#F4F7FA 0%,#E6EBF0 16%,#C9D1D9 27%,#8794A2 38%,#3A444E 47%,#171B20 58%,#0D0F12 74%,#0B0D10 100%);
+  color:#DFE5EB;transition:opacity .4s,transform .4s}
+/* em cima o fundo é claro: marca e nome em cromo escuro, como o manual manda pro fundo claro */
+#cadeado .simb.so-escuro{display:none}#cadeado .simb.so-claro{display:block}
+#cadeado .nome b{background:linear-gradient(180deg,#6c7886 0,#2a323b 44%,#0f1317 50%,#4b5662 58%,#78858f 80%,#2a323b);-webkit-background-clip:text;background-clip:text;color:transparent}
+#cadeado .nome span{color:#4B5662}
+#cadeado .tecl button{border-color:#39434D;color:#DFE5EB}
+#cadeado .tecl button:active{background:#232A31}
+#cadeado p{color:#7F8A96}
 #cadeado.sai{opacity:0;transform:scale(1.03)}
 #cadeado .simb{width:58px;height:72px}
 #cadeado .nome{text-align:center}
 #cadeado .nome b{display:block;font:400 18px Michroma,sans-serif;letter-spacing:.3em}
 #cadeado .nome span{font-size:9px;letter-spacing:.4em;color:var(--mut);text-transform:uppercase}
 #cadeado .pontos{display:flex;gap:16px;height:12px}
-#cadeado .pontos i{width:9px;height:9px;transform:rotate(45deg);border:1px solid var(--aco);transition:background .15s,transform .25s var(--curva)}
-#cadeado .pontos i.on{background:var(--prata);border-color:var(--prata);transform:rotate(45deg) scale(1.15)}
+#cadeado .pontos i{width:9px;height:9px;transform:rotate(45deg);border:1.5px solid #1A1F25;transition:background .15s,transform .25s var(--curva)}
+#cadeado .pontos i.on{background:#1A1F25;transform:rotate(45deg) scale(1.15)}
 #cadeado .tecl{display:grid;grid-template-columns:repeat(3,70px);gap:14px 22px}
-#cadeado .tecl button{height:70px;border-radius:50%;border:1px solid var(--linha2);font:400 20px Michroma,sans-serif;transition:background .15s,transform .15s}
-#cadeado .tecl button:active{background:var(--linha);transform:scale(.94)}
+#cadeado .tecl button{height:70px;border-radius:50%;border:1px solid #39434D;color:#DFE5EB;font:400 20px Michroma,sans-serif;transition:background .15s,transform .15s}
+#cadeado .tecl button:active{background:#232A31;transform:scale(.94)}
 #cadeado .tecl button.sem{visibility:hidden}
 #cadeado .tecl button.apaga{border:0}
-#cadeado p{min-height:20px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut)}
+#cadeado p{min-height:20px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#7F8A96}
 </style>
 </head>
 <body>
