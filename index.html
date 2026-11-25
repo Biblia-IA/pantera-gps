@@ -339,7 +339,7 @@ function calcular(silencioso) {
     const rua = (FIXOS.find(x => x[0] === praLa[0]) || [])[2];
     rota = Rotas.rota(G, daqui[1], praLa[1], { garupa, rua });
     const comMarcas = marcas.length ? Rotas.rota(G, daqui[1], praLa[1], { garupa, marcas, rua }) : rota;
-    rota.validada = comMarcas && comMarcas.linha.length === rota.linha.length;
+    rota.validada = comMarcas && comMarcas.linha.length === rota.linha.length && (MAPA.confirmadas || []).includes(FIXOS.findIndex(x => x[0] === daqui[0]) + '>' + FIXOS.findIndex(x => x[0] === praLa[0]));
     if (!rota.validada) rota = comMarcas;
   } else rota = Rotas.rota(G, de, destino, { garupa, pico, marcas, rua: praLa && (FIXOS.find(x => x[0] === praLa[0]) || [])[2] });
   if (!rota) { folha(el('b', 'Não achei caminho até ' + nomeDestino), acoes(['Fechar', limpar])); return; }
@@ -358,8 +358,8 @@ function calcular(silencioso) {
   for (const s of rota.subidas.slice(0, 3)) aviso(`Subida de ~${s.grau}% na ${s.rua} (${km(s.m)})` + (garupa ? ': talvez precise descer e empurrar' : ''));
   if (rota.subidas.length > 3) aviso(`Mais ${rota.subidas.length - 3} trechos de subida (roxo no mapa)`);
   if (rota.cargas > 0.45) aviso(rota.cargas > 1 ? 'Não cabe em uma carga' : 'Ida e volta pode não caber em uma carga: confira a bateria');
-  if (rota && rota.validada) aviso('Rota validada no Google: sem contramão (conferida em ' + new Date(MAPA.validado).toLocaleDateString('pt-BR') + ')', true);
-  else aviso('Rota não validada: use o Google Maps pra navegar');
+  if (rota && rota.validada) aviso('Confirmada quadra por quadra no Google: sem contramão (' + new Date(MAPA.validado).toLocaleDateString('pt-BR') + ')', true);
+  else aviso('Rota ainda não confirmada quadra por quadra: navegue pelo Google Maps');
   if (!rota.validada) for (const [n, m] of Object.entries(rota.duvidas)) aviso(`Mão não confirmada no mapa: ${n} (${km(m)}). Confira a placa`);
   if (!rota.validada) aviso('A navegação é feita pelo Google Maps, que respeita a mão das ruas. Este app escolhe o caminho longe das avenidas.', true);
   if (pico) aviso('Horário de pico: priorizei ruas mais calmas', true);
