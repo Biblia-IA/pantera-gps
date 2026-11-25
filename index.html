@@ -1,148 +1,236 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-tema="escuro">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#f3f1ec">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0D0F12">
 <title>Pantera GPS</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icone.svg">
 <link rel="apple-touch-icon" href="icone.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Geist:wght@300;400;500&display=swap">
 <style>
-/* claro, leve e de vidro: mapa de dia, painéis translúcidos, traço fino */
-:root{--bg:#f3f1ec;--vidro:rgba(255,255,255,.86);--vidro2:rgba(255,255,255,.92);--tx:#1d1f23;--fraco:#8a8d93;--sutil:rgba(20,24,30,.06);--amb:#f08a00;--ambsuave:rgba(240,138,0,.12);--ruim:#e5484d;--bom:#2f9e6a;--sombra:0 8px 30px rgba(30,32,40,.12),0 1px 3px rgba(30,32,40,.08);--mola:cubic-bezier(.22,1,.36,1);color-scheme:light}
+/* Identidade Balestra Corporation: grafite e prata, o cromo como único brilho, sem cor de destaque.
+   Michroma em maiúsculas espaçadas nos títulos e números; Geist 300/400 no texto. */
+:root{
+  --fundo:#0D0F12;--assoalho:#171B20;--placa:rgba(18,21,26,.95);--linha:#232A31;--linha2:#39434D;
+  --tx:#DFE5EB;--prata:#E9EFF5;--aco:#8794A2;--mut:#7F8A96;--fraco:#5D6975;
+  --cromo:linear-gradient(180deg,#fff 0,#d3dbe4 22%,#7a8795 44%,#2f3944 50%,#a4b4c4 55%,#eef3f8 78%,#8794a2);
+  --botao:linear-gradient(180deg,#f7f9fb,#d6dde5 48%,#aab6c2 52%,#e6ebf0);--botaoTx:#0D0F12;
+  --sombra:0 18px 40px rgba(0,0,0,.55);--grade:rgba(255,255,255,.035);
+  --curva:cubic-bezier(.22,1,.36,1);color-scheme:dark}
+[data-tema=claro]{
+  --fundo:#EEF1F4;--assoalho:#E2E7EC;--placa:rgba(246,248,250,.96);--linha:#D6DCE2;--linha2:#B9C3CD;
+  --tx:#1A1F25;--prata:#1A1F25;--aco:#5D6975;--mut:#6B7580;--fraco:#9AA6B2;
+  --cromo:linear-gradient(180deg,#6c7886 0,#2a323b 44%,#0f1317 50%,#4b5662 58%,#78858f 80%,#2a323b);
+  --botao:linear-gradient(180deg,#3a444e,#1a1f25 48%,#0d0f12 52%,#2a323b);--botaoTx:#E9EFF5;
+  --sombra:0 14px 34px rgba(26,31,37,.16);--grade:rgba(26,31,37,.04);color-scheme:light}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font:15px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+html,body{height:100%;overflow:hidden;background:var(--fundo);color:var(--tx);font:300 15px/1.45 Geist,-apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased;transition:background .4s}
+.so-claro{display:none}[data-tema=claro] .so-claro{display:block}[data-tema=claro] .so-escuro{display:none}
 canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
-button,input{font:inherit;color:inherit;background:var(--sutil);border:0;border-radius:14px;padding:10px 14px;min-height:44px;-webkit-user-select:none;user-select:none}
-button{cursor:pointer;font-weight:500;transition:transform .18s var(--mola),background .2s}
-button:active{transform:scale(.96)}
-button.pri{background:var(--amb);color:#fff}
-button.on{background:var(--ambsuave);color:var(--amb)}
-.vidro{background:var(--vidro);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);box-shadow:var(--sombra)}
-#topo{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 10px) 12px 0;display:flex;flex-direction:column;gap:8px;transition:opacity .3s,transform .4s var(--mola)}
-h1{font-weight:600;font-size:11px;letter-spacing:.2em;color:var(--fraco);text-transform:uppercase}
-#busca{width:100%;min-width:0;user-select:text;-webkit-user-select:text;border-radius:16px;padding-left:40px;font-size:16px;background:var(--vidro) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%238a8d93' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Cpath d='m12.5 12.5 4 4'/%3E%3C/svg%3E") 14px center no-repeat;-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);box-shadow:var(--sombra);outline:0}
-#busca::placeholder{color:var(--fraco)}
-#achados{max-height:46vh;overflow:auto;display:flex;flex-direction:column;border-radius:16px}
+button,input{font:inherit;color:inherit;border:0;background:none;-webkit-user-select:none;user-select:none}
+button{cursor:pointer}
+svg.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:square;stroke-linejoin:miter}
+.disp{font-family:Michroma,Geist,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.14em}
+.cromo{background:var(--cromo);-webkit-background-clip:text;background-clip:text;color:transparent}
+.placa{background:var(--placa);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid var(--linha);box-shadow:var(--sombra)}
+
+/* topo */
+#topo{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 10px) 12px 0;display:flex;flex-direction:column;gap:8px;transition:opacity .35s,transform .45s var(--curva)}
+.marca{display:flex;align-items:center;gap:9px;height:20px}
+.marca svg{width:14px;height:18px}
+.marca b{font:400 11px Michroma,sans-serif;letter-spacing:.32em}
+.marca span{font:400 9px Geist,sans-serif;letter-spacing:.3em;color:var(--mut);margin-left:auto}
+.busca{display:flex;align-items:center;gap:10px;height:46px;padding:0 14px;border-radius:12px}
+.busca svg{color:var(--aco);flex:none}
+#busca{flex:1;min-width:0;height:100%;outline:0;font-size:16px;font-weight:300;-webkit-user-select:text;user-select:text}
+#busca::placeholder{color:var(--mut)}
+#achados{border-radius:12px;max-height:46vh;overflow:auto}
 #achados:empty{display:none}
-#achados button{text-align:left;background:transparent;border-radius:0;border-bottom:1px solid var(--sutil)}
-#achados small{display:block;font-weight:400;font-size:13px;color:var(--fraco)}
-#chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0 8px}
+#achados button{display:block;width:100%;text-align:left;padding:11px 14px;border-bottom:1px solid var(--linha)}
+#achados button:last-child{border:0}
+#achados small{display:block;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut);margin-top:2px}
+#chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:6px}
 #chips::-webkit-scrollbar{display:none}
-#chips button{white-space:nowrap;flex:none;min-height:36px;padding:7px 14px;border-radius:999px;font-size:14px;background:var(--vidro2);box-shadow:0 2px 10px rgba(30,32,40,.08)}
-#chips button.falta{color:var(--fraco);background:var(--vidro)}
-#lado{position:fixed;right:12px;top:calc(env(safe-area-inset-top) + 150px);display:flex;flex-direction:column;border-radius:16px;overflow:hidden}
-#lado button{width:46px;height:46px;min-height:0;padding:0;border-radius:0;background:transparent;display:grid;place-items:center;color:var(--tx)}
-#lado button+button{border-top:1px solid var(--sutil)}
-#lado button.on{color:var(--amb)}
-#lado svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:transform .35s var(--mola)}
-#folha{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 8px);border-radius:24px;padding:8px 16px 16px;max-height:46vh;overflow:auto;transition:max-height .4s var(--mola)}
-#folha:empty{display:none}
-#folha.entra{animation:subir .45s var(--mola)}
-@keyframes subir{from{transform:translateY(30px);opacity:0}}
-#folha>b{display:block;font-size:19px;font-weight:600;letter-spacing:-.01em}
-#folha p{color:var(--fraco);margin-top:2px}
-#folha .alca{display:block;margin:0 auto 6px;min-height:22px;width:60px;padding:0;background:transparent;position:relative}
-#folha .alca::after{content:"";position:absolute;left:50%;top:8px;width:38px;height:5px;margin-left:-19px;border-radius:3px;background:rgba(20,24,30,.16)}
-#folha.mini>:not(.alca):not(b){display:none}
-#folha.mini{padding-bottom:12px}
-.num{display:flex;gap:22px;margin:8px 0 10px}.num b{display:block;font-size:22px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}.num span{color:var(--fraco);font-size:12px}
-.aviso{display:flex;gap:8px;align-items:flex-start;padding:7px 0;font-size:14px;color:#3a3d43;border-top:1px solid var(--sutil)}
-.aviso::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;margin-top:6px;background:var(--ruim)}
-.aviso.ok::before{background:var(--bom)}
-.acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.acoes button{flex:1 1 22%;font-size:14px;min-height:42px;padding:8px 10px}
-#manobra{position:fixed;left:8px;right:8px;top:calc(env(safe-area-inset-top) + 8px);border-radius:22px;padding:14px 18px;font-size:19px;font-weight:600;letter-spacing:-.01em;display:none;border-left:4px solid var(--amb)}
-body.nav #topo{opacity:0;pointer-events:none;transform:translateY(-20px)}body.nav #manobra{display:block;animation:descer .45s var(--mola)}
-@keyframes descer{from{transform:translateY(-24px);opacity:0}}
-#cadeado{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;justify-content:center;gap:18px;padding:32px;transition:opacity .35s,transform .35s}
-#cadeado.sai{opacity:0;transform:scale(1.04)}
-#cadeado h1,#cadeado p{text-align:center}
-#cadeado p{color:var(--fraco);min-height:1.4em}
-#cadeado .bolas{display:flex;justify-content:center;gap:14px}
-#cadeado .bolas i{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--fraco);transition:background .15s,border-color .15s,transform .2s var(--mola)}
-#cadeado .bolas i.on{background:var(--amb);border-color:var(--amb);transform:scale(1.1)}
-#cadeado .tecl{display:grid;grid-template-columns:repeat(3,72px);gap:16px 24px;justify-content:center}
-#cadeado .tecl button{height:72px;font-size:28px;font-weight:400;border-radius:50%;background:rgba(20,24,30,.05)}
-#gps{position:fixed;left:12px;top:calc(env(safe-area-inset-top) + 100px);font-size:12px;font-weight:500;padding:5px 10px;border-radius:999px;display:flex;align-items:center;gap:6px}
-#gps::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
-#gps[hidden]{display:none}
-#bTema .sol{display:none}body.bc #bTema .lua{display:none}body.bc #bTema .sol{display:block}
+#chips button{flex:none;height:32px;padding:0 12px;border-radius:8px;font:400 9px Michroma,sans-serif;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap;display:flex;align-items:center;gap:7px;transition:transform .2s var(--curva)}
+#chips button:active{transform:scale(.95)}
+#chips button i{width:5px;height:5px;transform:rotate(45deg);background:var(--aco)}
+#chips button.falta{color:var(--mut);border-style:dashed}
+#chips button.falta i{background:none;border:1px solid var(--mut)}
+
+/* trilho lateral */
+#trilho{position:fixed;right:12px;top:calc(env(safe-area-inset-top) + 134px);z-index:3;display:flex;flex-direction:column;border-radius:12px;overflow:hidden}
+#trilho button{width:46px;height:46px;display:grid;place-items:center;color:var(--tx);transition:background .2s}
+#trilho button:active{background:var(--linha)}
+#trilho button+button{border-top:1px solid var(--linha)}
+#trilho button.ativo{color:var(--prata);background:var(--linha)}
+#bNorte svg{transition:transform .3s var(--curva)}
 body.nav #bTema{display:none}
-/* tema BC (Balestra Corporation): grafite, assoalho, aço, prata; o cromo é o único brilho */
-body.bc{--bg:#0D0F12;--vidro:rgba(23,27,32,.82);--vidro2:rgba(23,27,32,.9);--tx:#E9EFF5;--fraco:#8794A2;--sutil:rgba(233,239,245,.08);--amb:#E9EFF5;--ambsuave:rgba(233,239,245,.12);--ruim:#d4605c;--bom:#9fb8a8;--sombra:0 10px 34px rgba(0,0,0,.45),inset 0 1px 0 rgba(233,239,245,.06);color-scheme:dark;font-family:Geist,-apple-system,system-ui,sans-serif}
-body.bc h1{font-family:Michroma,sans-serif;font-size:10px;letter-spacing:.28em;background:linear-gradient(90deg,#8794A2,#fff 45%,#8794A2);-webkit-background-clip:text;background-clip:text;color:transparent}
-body.bc button.pri{background:linear-gradient(180deg,#f4f7fa,#b9c3ce);color:#0D0F12;font-weight:600}
-body.bc .num b{font-family:Michroma,sans-serif;font-size:18px;font-weight:400}
-body.bc #folha>b{font-family:Michroma,sans-serif;font-size:15px;font-weight:400;letter-spacing:.04em}
-body.bc .aviso{color:#c3ccd6}
-body.bc #manobra{border-left-color:#E9EFF5;font-weight:500}
-body.bc #folha .alca::after{background:rgba(233,239,245,.22)}
-body.bc #cadeado .tecl button{background:rgba(233,239,245,.06);font-family:Michroma,sans-serif;font-size:22px}
-body.bc #busca{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%238794A2' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Cpath d='m12.5 12.5 4 4'/%3E%3C/svg%3E")}#gps.bom{color:var(--bom)}#gps.ruim{color:var(--ruim)}
-body:not(.nav) #gps{top:auto;bottom:calc(env(safe-area-inset-bottom) + 14px)}
+
+/* folha de baixo */
+#folha{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 8px);border-radius:18px;padding:6px 16px 16px;max-height:44vh;z-index:2;overflow:auto;background-image:linear-gradient(var(--grade) 1px,transparent 1px),linear-gradient(90deg,var(--grade) 1px,transparent 1px);background-size:32px 32px}
+#folha:empty{display:none}
+#folha.entra{animation:subir .5s var(--curva)}
+@keyframes subir{from{transform:translateY(28px);opacity:0}}
+.alca{display:block;width:100%;height:22px;position:relative}
+.alca::after{content:"";position:absolute;left:50%;top:8px;width:34px;height:3px;margin-left:-17px;border-radius:2px;background:var(--linha2)}
+#folha.mini>:not(.alca):not(.tit){display:none}
+.tit{font:400 13px/1.5 Michroma,sans-serif;letter-spacing:.12em;text-transform:uppercase;display:block;padding-top:2px}
+.sub{color:var(--mut);font-size:14px;margin-top:4px}
+.num{display:grid;grid-template-columns:repeat(3,1fr);margin:14px 0 6px;border-top:1px solid var(--linha);border-bottom:1px solid var(--linha)}
+.num div{padding:10px 0}.num div+div{border-left:1px solid var(--linha);padding-left:12px}
+.num b{display:block;font:400 17px Michroma,sans-serif;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.num span{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--mut)}
+.aviso{display:flex;gap:10px;align-items:flex-start;padding:8px 0;font-size:13.5px;border-bottom:1px solid var(--linha)}
+.aviso svg{flex:none;width:15px;height:15px;margin-top:2px;color:var(--aco)}
+.aviso.alerta{color:var(--prata);font-weight:400}.aviso.alerta svg{color:var(--prata)}
+.legenda{display:flex;gap:16px;flex-wrap:wrap;padding:9px 0 2px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut)}
+.legenda i{display:inline-block;width:22px;height:0;border-top:3px solid var(--aco);vertical-align:middle;margin-right:7px}
+.legenda i.tr{border-top-style:dashed}.legenda i.po{border-top-style:dotted}
+.acoes{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px}
+.acoes button{height:44px;border-radius:9px;border:1px solid var(--linha2);font:400 9.5px Michroma,sans-serif;letter-spacing:.14em;text-transform:uppercase;transition:transform .2s var(--curva)}
+.acoes button:active{transform:scale(.97)}
+.acoes button.pri{grid-column:1/-1;border:0;background:var(--botao);color:var(--botaoTx);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 6px 18px rgba(0,0,0,.35)}
+.acoes button.ativo{border-color:var(--prata);color:var(--prata)}
+.campo{width:100%;height:46px;margin-top:12px;padding:0 14px;border-radius:9px;border:1px solid var(--linha2);font-size:16px;outline:0;-webkit-user-select:text;user-select:text}
+
+/* manobra durante a navegação */
+#manobra{position:fixed;left:8px;right:8px;top:calc(env(safe-area-inset-top) + 8px);border-radius:18px;padding:14px 16px;display:none;align-items:center;gap:14px}
+#manobra .seta{width:52px;height:52px;flex:none;border-radius:12px;display:grid;place-items:center;background:var(--botao);color:var(--botaoTx)}
+#manobra .seta svg{width:30px;height:30px;stroke-width:2}
+#manobra b{display:block;font:400 22px Michroma,sans-serif;letter-spacing:.04em}
+#manobra span{display:block;font-size:14px;color:var(--mut);margin-top:2px}
+#manobra.aviso-fora .seta{background:none;border:1px solid var(--prata);color:var(--prata)}
+body.nav #topo{opacity:0;pointer-events:none;transform:translateY(-16px)}
+body.nav #manobra{display:flex;animation:descer .45s var(--curva)}
+@keyframes descer{from{transform:translateY(-20px);opacity:0}}
+
+/* GPS */
+#gps{position:fixed;left:12px;bottom:calc(env(safe-area-inset-bottom) + 14px);height:28px;padding:0 11px;border-radius:7px;display:flex;align-items:center;gap:7px;font:400 8.5px Michroma,sans-serif;letter-spacing:.16em}
+#gps[hidden]{display:none}
+#gps i{width:6px;height:6px;transform:rotate(45deg);background:var(--prata)}
+#gps.ruim i{background:none;border:1px solid var(--prata);animation:pisca 1.2s infinite}
+@keyframes pisca{50%{opacity:.2}}
+body.nav #gps{bottom:auto;top:calc(env(safe-area-inset-top) + 104px)}
+
+/* cadeado */
+#cadeado{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:32px;
+  background:linear-gradient(var(--grade) 1px,transparent 1px) 0 0/48px 48px,linear-gradient(90deg,var(--grade) 1px,transparent 1px) 0 0/48px 48px,radial-gradient(ellipse at 50% 30%,#27303a,#0e1115 55%,#0b0d10);transition:opacity .4s,transform .4s}
+[data-tema=claro] #cadeado{background:linear-gradient(var(--grade) 1px,transparent 1px) 0 0/48px 48px,linear-gradient(90deg,var(--grade) 1px,transparent 1px) 0 0/48px 48px,radial-gradient(ellipse at 50% 30%,#fff,#eef1f4 60%,#dfe5eb)}
+#cadeado.sai{opacity:0;transform:scale(1.03)}
+#cadeado .simb{width:58px;height:72px}
+#cadeado .nome{text-align:center}
+#cadeado .nome b{display:block;font:400 18px Michroma,sans-serif;letter-spacing:.3em}
+#cadeado .nome span{font-size:9px;letter-spacing:.4em;color:var(--mut);text-transform:uppercase}
+#cadeado .pontos{display:flex;gap:16px;height:12px}
+#cadeado .pontos i{width:9px;height:9px;transform:rotate(45deg);border:1px solid var(--aco);transition:background .15s,transform .25s var(--curva)}
+#cadeado .pontos i.on{background:var(--prata);border-color:var(--prata);transform:rotate(45deg) scale(1.15)}
+#cadeado .tecl{display:grid;grid-template-columns:repeat(3,70px);gap:14px 22px}
+#cadeado .tecl button{height:70px;border-radius:50%;border:1px solid var(--linha2);font:400 20px Michroma,sans-serif;transition:background .15s,transform .15s}
+#cadeado .tecl button:active{background:var(--linha);transform:scale(.94)}
+#cadeado .tecl button.sem{visibility:hidden}
+#cadeado .tecl button.apaga{border:0}
+#cadeado p{min-height:20px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut)}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="topo">
-  <h1>PANTERA GPS</h1>
-  <input id="busca" placeholder="Buscar rua ou lugar" autocomplete="off">
-  <div id="achados" class="vidro"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="gCromo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="#D9DEE4"/><stop offset=".55" stop-color="#8E98A3"/><stop offset=".75" stop-color="#E6E9ED"/><stop offset="1" stop-color="#A7B0BA"/></linearGradient>
+    <linearGradient id="gAco" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C3CAD2"/><stop offset=".5" stop-color="#5E6874"/><stop offset="1" stop-color="#8D97A2"/></linearGradient>
+    <linearGradient id="gCromoD" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6C7886"/><stop offset=".44" stop-color="#2A323B"/><stop offset=".5" stop-color="#0F1317"/><stop offset=".6" stop-color="#4B5662"/><stop offset="1" stop-color="#2A323B"/></linearGradient>
+    <linearGradient id="gAcoD" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4B5662"/><stop offset=".5" stop-color="#1A1F25"/><stop offset="1" stop-color="#3A444E"/></linearGradient>
+    <symbol id="p7" viewBox="16 2 68 88"><path d="M48.6 8 48.6 62 18 88Z" fill="url(#gCromo)"/><path d="M51.4 8 82 88 51.4 62Z" fill="url(#gAco)"/><path d="M50 4V64" stroke="#fff" stroke-width="1.6"/></symbol>
+    <!-- no fundo claro a marca vai em cromo escuro, como manda o manual -->
+    <symbol id="p7d" viewBox="16 2 68 88"><path d="M48.6 8 48.6 62 18 88Z" fill="url(#gCromoD)"/><path d="M51.4 8 82 88 51.4 62Z" fill="url(#gAcoD)"/><path d="M50 4V64" stroke="#E9EFF5" stroke-width="1.6"/></symbol>
+  </defs>
+</svg>
+
+<header id="topo">
+  <div class="marca"><svg class="so-escuro"><use href="#p7"/></svg><svg class="so-claro"><use href="#p7d"/></svg><b class="cromo">PANTERA</b><span>GPS · BAURU</span></div>
+  <label class="busca placa"><svg class="ic" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg><input id="busca" placeholder="Rua, lugar ou coordenada" autocomplete="off"></label>
+  <div id="achados" class="placa"></div>
   <div id="chips"></div>
-</div>
-<div id="manobra" class="vidro"></div>
-<div id="gps" class="vidro" hidden></div>
-<div id="lado" class="vidro">
-  <button id="bVolta" aria-label="Fazer a volta" hidden><svg viewBox="0 0 24 24"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg></button>
-  <button id="bNorte" aria-label="Girar o mapa"><svg viewBox="-12 -12 24 24" style="stroke:none"><path d="M0-9 4.2 0h-8.4Z" fill="#e5484d"/><path d="M0 9 4.2 0h-8.4Z" fill="#b9bcc2"/></svg></button>
-  <button id="bMais" aria-label="Aproximar"><svg viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg></button>
-  <button id="bMenos" aria-label="Afastar"><svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg></button>
-  <button id="bEu" aria-label="Minha posição"><svg viewBox="0 0 24 24"><path d="M20 4 4 10.5l6.5 3 3 6.5Z"/></svg></button>
-  <button id="bTema" aria-label="Alternar branco e escuro"><svg class="lua" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"/></svg><svg class="sol" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></button>
-</div>
-<div id="folha" class="vidro"></div>
+</header>
+
+<div id="manobra" class="placa"></div>
+<div id="gps" class="placa" hidden></div>
+
+<nav id="trilho" class="placa">
+  <button id="bVolta" aria-label="Fazer a volta" hidden><svg class="ic" viewBox="0 0 24 24"><path d="M4 8h14M14 4l4 4-4 4M20 16H6M10 12l-4 4 4 4"/></svg></button>
+  <button id="bNorte" aria-label="Girar o mapa"><svg viewBox="-12 -12 24 24" width="22" height="22"><path d="M0-10 4 0H-4Z" fill="currentColor"/><path d="M0 10 4 0H-4Z" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button>
+  <button id="bMais" aria-label="Aproximar"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button id="bMenos" aria-label="Afastar"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+  <button id="bEu" aria-label="Minha posição"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><path d="M12 11v2" stroke-width="2.5"/></svg></button>
+  <button id="bTema" aria-label="Alternar claro e escuro"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/></svg></button>
+</nav>
+
+<section id="folha" class="placa"></section>
+
 <script src="cadeado.js"></script>
 <script src="dados.js"></script>
 <script src="rotas.js"></script>
 <script>
 'use strict';
 const $ = s => document.querySelector(s);
-const G = Rotas.carregar(MAPA);
-// cores do mapa por tema: claro (padrão) ou BC (?tema=bc)
-// escuro (BC) ou branco: o link ?tema= manda; senão vale a última escolha no botão (padrão: escuro)
-const temaLink = new URLSearchParams(location.search).get('tema');
-let temaSalvo = 'bc'; try { temaSalvo = localStorage.getItem('tema') || 'bc'; } catch {}
-const BC = temaLink ? temaLink === 'bc' : temaSalvo === 'bc';
-if (BC) { document.body.classList.add('bc'); const f = document.createElement('link'); f.rel = 'stylesheet'; f.href = 'https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Michroma&display=swap'; document.head.append(f); }
-const PAL = BC ? {
-  fundo: '#0D0F12', cor: ['#1d2a24', '#1b2026', '#20262d', '#2a323b', '#343e49', '#15191e', '#1a1d21'], borda: [null, '#0a0c0f', '#0a0c0f', '#0a0c0f', '#0a0c0f', null, null],
-  evitarB: '#2a1414', evitar: '#3a1f1f', seta: '#56616d', rotulo: '#8794A2', halo: 'rgba(13,15,18,.9)', lugar: '#E9EFF5', lugarTx: '#E9EFF5',
-  rotaHalo: 'rgba(233,239,245,.18)', rota: '#E9EFF5', subida: '#8f9bd6', ruim: '#d4605c', aro: '#0D0F12', disco: '#171B20', cone: '233,239,245', ponta: '#E9EFF5', olho: '#E9EFF5', cab: '#05060a', orelha: '#2a323b', focinho: '#56616d',
-} : {
-  fundo: '#f3f1ec', cor: ['#cfe6d5', '#ffffff', '#ffffff', '#fff4cc', '#ffe7a3', '#fbfaf7', '#ebe3d4'], borda: [null, '#dcd7ce', '#d3cdc2', '#e7d28e', '#e2bf66', '#e6e2da', null],
-  evitarB: '#eaa7a2', evitar: '#f7d3d0', seta: '#a3a7ae', rotulo: '#5d6168', halo: 'rgba(255,255,255,.92)', lugar: '#f08a00', lugarTx: '#b86400',
-  rotaHalo: '#ffffff', rota: '#f08a00', subida: '#8e5cf7', ruim: '#e5484d', aro: '#fff', disco: '#fff', cone: '240,138,0', ponta: '#f08a00', olho: '#ffb02e', cab: '#1d1f23', orelha: '#3a3d43', focinho: '#6a6e76',
-};
-if (BC) document.querySelector('meta[name=theme-color]').content = '#0D0F12';
 const ler = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const gravar = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const G = Rotas.carregar(MAPA);
 
-// Lugares públicos já vêm marcados; os particulares ficam só neste aparelho.
-// os destinos não ficam neste arquivo: vêm cifrados (site) ou injetados na página privada
+// ================= tema (as duas versões da identidade BC) =================
+const PALETAS = {
+  escuro: {
+    fundo: '#0D0F12', meta: '#0D0F12',
+    rua: ['#1C2126', '#1A1F25', '#20262D', '#2A323B', '#343E49', '#15191E', '#171B20'], borda: [null, '#08090B', '#08090B', '#08090B', '#08090B', null, null],
+    evitar: '#8794A2', mao: '#4B5662', rotulo: '#7F8A96', halo: '#0D0F12', lugar: '#C3CCD5', lugarTx: '#DFE5EB',
+    faixa: '#AEB9C5', fio: '#FFFFFF', brilho: 'rgba(233,239,245,.6)', brilhoR: 16,
+    cromo: [[0, '#FFFFFF'], [0.35, '#D9DEE4'], [0.55, '#8E98A3'], [0.75, '#E6E9ED'], [1, '#A7B0BA']], aco: [[0, '#C3CAD2'], [0.5, '#5E6874'], [1, '#8D97A2']],
+    contorno: '#0D0F12', luz: '233,239,245', precisao: 'rgba(135,148,162,', marca: '#E9EFF5',
+  },
+  claro: {
+    fundo: '#EEF1F4', meta: '#EEF1F4',
+    rua: ['#DDE3E8', '#FFFFFF', '#FFFFFF', '#F7F9FA', '#F1F4F6', '#F8F9FB', '#E4E9ED'], borda: [null, '#CFD6DD', '#C2CBD4', '#AAB5C0', '#98A4B0', '#DDE2E7', null],
+    evitar: '#5D6975', mao: '#9AA6B2', rotulo: '#5D6975', halo: '#EEF1F4', lugar: '#2A323B', lugarTx: '#1A1F25',
+    faixa: '#1A1F25', fio: '#E9EFF5', brilho: 'rgba(13,15,18,.28)', brilhoR: 6,
+    cromo: [[0, '#6C7886'], [0.44, '#2A323B'], [0.5, '#0F1317'], [0.6, '#4B5662'], [1, '#2A323B']], aco: [[0, '#4B5662'], [0.5, '#1A1F25'], [1, '#3A444E']],
+    contorno: '#EEF1F4', luz: '26,31,37', precisao: 'rgba(42,50,59,', marca: '#1A1F25',
+  },
+};
+let tema = new URLSearchParams(location.search).get('tema') === 'claro' ? 'claro' : ler('tema2', 'escuro');
+let PAL = PALETAS[tema];
+function aplicarTema() {
+  PAL = PALETAS[tema];
+  document.documentElement.dataset.tema = tema;
+  $('meta[name=theme-color]').content = PAL.meta;
+  desenhar();
+}
+
+// ================= lugares =================
+// os destinos não ficam neste arquivo: vêm cifrados (site) e abrem com o PIN
 let FIXOS = self.FIXOS || [['Casa', null], ['Casa da sogra', null]];
 let meus = ler('lugares', {}), marcas = ler('marcas', []), garupa = ler('garupa', false);
-const lugares = () => {
-  const m = new Map(FIXOS);
-  for (const [n, p] of Object.entries(meus)) m.set(n, p);
-  return [...m];
-};
-
+const lugares = () => { const m = new Map(FIXOS); for (const [n, p] of Object.entries(meus)) m.set(n, p); return [...m]; };
 let eu = null, rumo = 0, origemManual = null, destino = null, nomeDestino = '', rota = null, navegando = false, seguir = false, salvarComo = null;
 
-// ---------- mapa ----------
+// ================= ícones =================
+const ICONE = {
+  ok: '<path d="M5 12.5 10 17 19 7"/>',
+  alerta: '<path d="M12 3 22 20H2Z"/><path d="M12 10v4M12 16.5v1"/>',
+  info: '<path d="M12 3 21 12 12 21 3 12Z"/>',
+  direita: '<path d="M7 21V12a4 4 0 0 1 4-4h8M15 4l4 4-4 4"/>',
+  esquerda: '<path d="M17 21V12a4 4 0 0 0-4-4H5M9 4 5 8l4 4"/>',
+  retorno: '<path d="M8 21V9a4 4 0 0 1 8 0v6M12 11l4 4 4-4"/>',
+  chegada: '<path d="M12 3 20 11 12 19 4 11Z"/><path d="M12 19v3"/>',
+  fora: '<path d="M12 3 22 20H2Z"/><path d="M12 10v4M12 16.5v1"/>',
+};
+const ic = (n, cls = 'ic') => `<svg class="${cls}" viewBox="0 0 24 24">${ICONE[n]}</svg>`;
+
+// ================= mapa =================
 const cv = $('#c'), cx = cv.getContext('2d');
 const LAT0 = -22.33, LON0 = -49.06, KY = 111320, KX = KY * Math.cos(LAT0 * Math.PI / 180);
 const xy = p => [(p[1] - LON0) * KX, -(p[0] - LAT0) * KY];
@@ -164,38 +252,37 @@ function noMundo(sx, sy) {
   const dx = sx - W / 2, dy = sy - centroY(), c = Math.cos(cam.r), s = Math.sin(cam.r);
   return [cam.x + (dx * c + dy * s) / cam.z, cam.y + (-dx * s + dy * c) / cam.z];
 }
-function linha(pts, cor, larg) {
-  cx.strokeStyle = cor; cx.lineWidth = larg; cx.beginPath();
-  pts.forEach((p, i) => i ? cx.lineTo(...p) : cx.moveTo(...p)); cx.stroke();
+function traco(pts, cor, larg, tracejado) {
+  cx.strokeStyle = cor; cx.lineWidth = larg; cx.setLineDash(tracejado || []); cx.beginPath();
+  pts.forEach((p, i) => i ? cx.lineTo(...p) : cx.moveTo(...p)); cx.stroke(); cx.setLineDash([]);
 }
+const FONTE = (peso, tam) => `${peso} ${tam}px Geist,-apple-system,system-ui,sans-serif`;
+
 function pintar() {
   pedido = false;
-  $("#bVolta").hidden = !destino;
-  const bn = $('#bNorte svg'); if (bn) { bn.style.transform = 'rotate(' + cam.r + 'rad)'; $('#bNorte').classList.toggle('on', modo === 'direcao'); }
+  $('#bVolta').hidden = !destino;
+  $('#bNorte svg').style.transform = 'rotate(' + cam.r + 'rad)'; $('#bNorte').classList.toggle('ativo', modo === 'direcao');
   cx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
   cx.fillStyle = PAL.fundo; cx.fillRect(0, 0, W, H);
   cx.lineCap = cx.lineJoin = 'round';
-  const raio = Math.hypot(W, H) / cam.z, z = cam.z;
+  const raio = Math.hypot(W, H) / cam.z, z = cam.z, esc = Math.max(0.3, Math.min(2.4, z * 1.6));
   const vis = T.filter(t => t.box[2] > cam.x - raio && t.box[0] < cam.x + raio && t.box[3] > cam.y - raio && t.box[1] < cam.y + raio);
-  // ruas com contorno fino (ciclovia, rua, coletora, secundária, principal, serviço, terra)
-  const COR = PAL.cor, BORDA = PAL.borda;
-  const LARG = [2, 4, 6, 8, 9, 2.5, 2.5];
-  const esc = Math.max(0.3, Math.min(2.4, z * 1.6));
-  const ordem = [5, 6, 0, 1, 2, 3, 4];
   const pts = new Map(vis.map(t => [t, t.g.map(naTela)]));
-  for (const passo of [0, 1]) for (const c of ordem) {
+  const LARG = [2, 4, 6, 8, 9, 2.5, 2.5], ORDEM = [5, 6, 0, 1, 2, 3, 4];
+  // ruas: contorno, depois o corpo; as avenidas evitadas ganham um tracejado de aço por cima
+  for (const passo of [0, 1]) for (const c of ORDEM) {
     if (z < 0.1 && (c === 5 || c === 6)) continue;
     for (const t of vis) if (t.c === c) {
       const larg = (t.evitar ? 8 : LARG[c]) * esc;
-      if (passo === 0) { const b = t.evitar ? PAL.evitarB : BORDA[c]; if (b) linha(pts.get(t), b, larg + 2 * Math.max(0.6, esc * 0.7)); }
-      else linha(pts.get(t), t.evitar ? PAL.evitar : COR[c], larg);
+      if (passo === 0) { if (PAL.borda[c] || t.evitar) traco(pts.get(t), PAL.borda[c] || PAL.borda[4], larg + 2 * Math.max(0.6, esc * 0.7)); }
+      else traco(pts.get(t), PAL.rua[t.evitar ? 4 : c], larg);
     }
   }
-  if (rota) desenharRota();
-  // seta de mão única
+  for (const t of vis) if (t.evitar) traco(pts.get(t), PAL.evitar, Math.max(1, 1.4 * esc), [2 * esc + 2, 4 * esc + 3]);
+  if (rota) pintarRota();
+  // mão única: chevron fino
   if (z > 0.35) {
-    cx.strokeStyle = PAL.seta; cx.lineWidth = 1.3;
-    const postas = [];
+    cx.strokeStyle = PAL.mao; cx.lineWidth = 1.2; const postas = [];
     for (const t of vis) {
       if (!t.mao || t.c === 5) continue;
       const i = t.g.length >> 1, a = naTela(t.g[i - 1] || t.g[0]), b = naTela(t.g[i] || t.g[1]);
@@ -203,13 +290,12 @@ function pintar() {
       if (m[0] < 0 || m[1] < 0 || m[0] > W || m[1] > H || postas.some(o => Math.hypot(o[0] - m[0], o[1] - m[1]) < 55)) continue;
       postas.push(m);
       cx.save(); cx.translate(...m); cx.rotate(Math.atan2(b[1] - a[1], b[0] - a[0]) + (t.mao < 0 ? Math.PI : 0));
-      cx.beginPath(); cx.moveTo(-7, 0); cx.lineTo(6, 0); cx.moveTo(1, -4); cx.lineTo(6, 0); cx.lineTo(1, 4); cx.stroke(); cx.restore();
+      cx.beginPath(); cx.moveTo(-3, -4); cx.lineTo(2, 0); cx.lineTo(-3, 4); cx.moveTo(2, -4); cx.lineTo(7, 0); cx.lineTo(2, 4); cx.stroke(); cx.restore();
     }
   }
-  // nomes das ruas (avenidas aparecem primeiro)
+  // nomes das ruas
   if (z > 0.1) {
-    cx.font = (BC ? '500 11px Geist,' : '500 11px ') + '-apple-system,BlinkMacSystemFont,system-ui'; cx.fillStyle = PAL.rotulo; cx.textAlign = 'center';
-    const postos = [];
+    cx.font = FONTE(400, 10.5); cx.fillStyle = PAL.rotulo; cx.textAlign = 'center'; const postos = [];
     for (const t of [...vis].sort((a, b) => (b.c >= 2 && b.c <= 4) - (a.c >= 2 && a.c <= 4))) {
       if (!t.nome || t.g.length < 2 || (z < 0.28 && !(t.c >= 2 && t.c <= 4))) continue;
       const a = naTela(t.g[0]), b = naTela(t.g[t.g.length - 1]);
@@ -224,97 +310,90 @@ function pintar() {
       cx.strokeStyle = PAL.halo; cx.lineWidth = 3; cx.strokeText(curto, 0, -6); cx.fillText(curto, 0, -6); cx.restore();
     }
   }
-  for (const m of marcas) ponto(naTela(xy(m.p)), m.tipo === 'buraco' ? '#d99a3d' : '#e5484d', 6);
-  if (destino) alfinete(naTela(xy(destino)));
-  if (origemManual && !eu) ponto(naTela(xy(origemManual)), '#2f9e6a', 8);
-  cx.font = '600 12px -apple-system,BlinkMacSystemFont,system-ui'; cx.textAlign = 'left';
+  for (const m of marcas) sinal(naTela(xy(m.p)), m.tipo);
+  if (origemManual && !eu) losango(naTela(xy(origemManual)), 6, PAL.lugar, true);
+  // destinos salvos: losango de aço + nome em maiúsculas espaçadas
+  cx.font = FONTE(500, 9.5); cx.textAlign = 'left';
   for (const [n, p] of lugares()) if (p) {
-    const q = naTela(xy(p)); if (q[0] < -50 || q[1] < -20 || q[0] > W + 50 || q[1] > H + 20) continue;
-    ponto(q, PAL.lugar, 5); cx.strokeStyle = PAL.halo; cx.lineWidth = 3.5; cx.strokeText(n, q[0] + 9, q[1] + 4); cx.fillStyle = PAL.lugarTx; cx.fillText(n, q[0] + 9, q[1] + 4);
+    const q = naTela(xy(p)); if (q[0] < -60 || q[1] < -20 || q[0] > W + 60 || q[1] > H + 20) continue;
+    losango(q, 4.5, PAL.lugar);
+    const txt = n.toUpperCase().split('').join(String.fromCharCode(8202));
+    cx.strokeStyle = PAL.halo; cx.lineWidth = 3.5; cx.strokeText(txt, q[0] + 10, q[1] + 3.5); cx.fillStyle = PAL.lugarTx; cx.fillText(txt, q[0] + 10, q[1] + 3.5);
   }
+  if (destino) alvo(naTela(xy(destino)));
   const aqui = visto || eu;
-  if (aqui && precisao > 15) { const q = naTela(xy(aqui)); cx.fillStyle = 'rgba(47,109,246,.10)'; cx.strokeStyle = 'rgba(47,109,246,.35)'; cx.lineWidth = 1; cx.beginPath(); cx.arc(...q, precisao * cam.z, 0, 7); cx.fill(); cx.stroke(); }
-  if (aqui) pantera(naTela(xy(aqui)), rumoVisto * Math.PI / 180 + cam.r);
+  if (aqui && precisao > 15) { const q = naTela(xy(aqui)); cx.fillStyle = PAL.precisao + '.10)'; cx.strokeStyle = PAL.precisao + '.45)'; cx.lineWidth = 1; cx.beginPath(); cx.arc(...q, precisao * cam.z, 0, 7); cx.fill(); cx.stroke(); }
+  if (aqui) seta(naTela(xy(aqui)), rumoVisto * Math.PI / 180 + cam.r);
 }
-function desenharRota() {
-  cx.save(); cx.shadowColor = BC ? 'rgba(233,239,245,.55)' : 'rgba(120,60,0,.25)'; cx.shadowBlur = BC ? 14 : 6;
-  linha(rota.linha.map(p => naTela(xy(p))), PAL.rotaHalo, 11);
-  cx.restore();
-  for (const s of rota.partes) linha(s.g.map(p => naTela(xy(p))), s.ruim ? PAL.ruim : s.subida ? PAL.subida : PAL.rota, BC ? 4.5 : 6.5);
+// a rota é um "fio de luz": faixa de metal com um filete claro no centro, como o fio do símbolo
+function pintarRota() {
+  const tudo = rota.linha.map(p => naTela(xy(p)));
+  cx.save(); cx.shadowColor = PAL.brilho; cx.shadowBlur = PAL.brilhoR; traco(tudo, PAL.faixa, 7); cx.restore();
+  traco(tudo, PAL.fundo, 7);
+  for (const s of rota.partes) {
+    const g = s.g.map(p => naTela(xy(p)));
+    traco(g, PAL.faixa, 6, s.ruim ? [9, 6] : null);
+    traco(g, PAL.fio, 1.6, s.subida ? [1, 5] : null);
+  }
 }
-function ponto(p, cor, r) { cx.fillStyle = cor; cx.strokeStyle = PAL.aro; cx.lineWidth = 2.5; cx.beginPath(); cx.arc(...p, r, 0, 7); cx.stroke(); cx.fill(); }
-function alfinete(p) { // gota do destino
-  cx.save(); cx.translate(p[0], p[1]); cx.shadowColor = 'rgba(0,0,0,.25)'; cx.shadowBlur = 6; cx.shadowOffsetY = 2;
-  cx.beginPath(); cx.moveTo(0, 0); cx.bezierCurveTo(-4, -8, -11, -12, -11, -21); cx.arc(0, -21, 11, Math.PI, 0); cx.bezierCurveTo(11, -12, 4, -8, 0, 0);
-  cx.fillStyle = '#e5484d'; cx.fill(); cx.shadowColor = 'transparent';
-  cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(0, -21, 4, 0, 7); cx.fill(); cx.restore();
-}
-// cabeça de pantera (mesmo desenho do ícone do app), sempre em pé; a direção vem do cone e da seta na borda
-const CAB = new Path2D('M22 30C20 18 26 12 33 16L40 22C46 20 54 20 60 22L67 16C74 12 80 18 78 30C86 40 86 58 78 70C70 82 60 88 50 88C40 88 30 82 22 70C14 58 14 40 22 30Z');
-const ORELHA = new Path2D('M27 27 31 20 37 24Z M73 27 69 20 63 24Z');
-const OLHOS = new Path2D('M27 44C33 41 41 44 45 50C39 53 31 51 27 44Z M73 44C67 41 59 44 55 50C61 53 69 51 73 44Z');
-const NARIZ = new Path2D('M44 62H56L50 68.5Z'), BOCA = new Path2D('M50 68.5V73M50 73C47 77 43 77 41 75M50 73C53 77 57 77 59 75');
-function cabeca(x, y, tam) {
-  cx.save(); cx.translate(x - tam / 2, y - tam / 2); cx.scale(tam / 100, tam / 100);
-  cx.fillStyle = PAL.cab; cx.fill(CAB); cx.fillStyle = PAL.orelha; cx.fill(ORELHA);
-  cx.fillStyle = PAL.olho; cx.fill(OLHOS);
-  cx.fillStyle = PAL.cab; cx.beginPath(); cx.ellipse(37.5, 47.5, 1.5, 3.4, -0.5, 0, 7); cx.ellipse(62.5, 47.5, 1.5, 3.4, 0.5, 0, 7); cx.fill();
-  cx.fillStyle = PAL.focinho; cx.fill(NARIZ); cx.strokeStyle = PAL.focinho; cx.lineWidth = 1.8; cx.lineCap = 'round'; cx.stroke(BOCA);
+function losango(p, r, cor, vazio) {
+  cx.save(); cx.translate(...p); cx.rotate(Math.PI / 4);
+  cx.fillStyle = cor; cx.strokeStyle = PAL.halo; cx.lineWidth = 2;
+  cx.strokeRect(-r, -r, 2 * r, 2 * r); if (vazio) { cx.strokeStyle = cor; cx.lineWidth = 1.5; cx.strokeRect(-r, -r, 2 * r, 2 * r); } else cx.fillRect(-r, -r, 2 * r, 2 * r);
   cx.restore();
 }
-// símbolo P7 da Balestra (ponta forjada com o fio de luz central e o M da montanha na base), girando com o rumo
+// destino: losango cromado com um anel fino em volta
+function alvo(p) {
+  cx.save(); cx.translate(...p);
+  cx.strokeStyle = PAL.marca; cx.lineWidth = 1; cx.globalAlpha = 0.5; cx.beginPath(); cx.arc(0, 0, 17, 0, 7); cx.stroke(); cx.globalAlpha = 1;
+  cx.rotate(Math.PI / 4);
+  const g = cx.createLinearGradient(-9, -9, 9, 9); for (const [o, c] of PAL.cromo) g.addColorStop(o, c);
+  cx.shadowColor = PAL.brilho; cx.shadowBlur = 10;
+  cx.fillStyle = PAL.contorno; cx.fillRect(-10, -10, 20, 20);
+  cx.fillStyle = g; cx.fillRect(-8, -8, 16, 16);
+  cx.restore();
+}
+// marcas que ele põe no caminho: buraco (anel), interditado (x no quadrado), contramão (barra no círculo)
+function sinal(p, tipo) {
+  cx.save(); cx.translate(...p); cx.strokeStyle = PAL.marca; cx.fillStyle = PAL.fundo; cx.lineWidth = 1.6;
+  if (tipo === 'interditado') { cx.fillRect(-7, -7, 14, 14); cx.strokeRect(-7, -7, 14, 14); cx.beginPath(); cx.moveTo(-4, -4); cx.lineTo(4, 4); cx.moveTo(4, -4); cx.lineTo(-4, 4); cx.stroke(); }
+  else { cx.beginPath(); cx.arc(0, 0, 7, 0, 7); cx.fill(); cx.stroke(); if (tipo === 'contramao') { cx.beginPath(); cx.moveTo(-4, 0); cx.lineTo(4, 0); cx.stroke(); } else { cx.beginPath(); cx.arc(0, 0, 2.5, 0, 7); cx.stroke(); } }
+  cx.restore();
+}
+// você no mapa: o símbolo P7 da Balestra (ponta forjada com o fio de luz), girando com o rumo, com o feixe de luz à frente
 const P7E = new Path2D('M48.6 8L48.6 62L18 88Z'), P7D = new Path2D('M51.4 8L82 88L51.4 62Z');
-function setaBC(x, y, ang) {
+function seta([x, y], ang) {
   cx.save(); cx.translate(x, y); cx.rotate(ang);
-  const g = cx.createRadialGradient(0, 0, 8, 0, 0, 80); g.addColorStop(0, 'rgba(233,239,245,.38)'); g.addColorStop(1, 'rgba(233,239,245,0)');
-  cx.fillStyle = g; cx.beginPath(); cx.moveTo(0, 0); cx.arc(0, 0, 80, -Math.PI / 2 - 0.42, -Math.PI / 2 + 0.42); cx.closePath(); cx.fill();
-  const s = 0.62; cx.scale(s, s); cx.translate(-50, -54);
-  const cromo = cx.createLinearGradient(18, 8, 82, 88);
-  for (const [o, c] of [[0, '#FFFFFF'], [0.35, '#D9DEE4'], [0.55, '#8E98A3'], [0.75, '#E6E9ED'], [1, '#A7B0BA']]) cromo.addColorStop(o, c);
-  const aco = cx.createLinearGradient(82, 8, 18, 88);
-  for (const [o, c] of [[0, '#C3CAD2'], [0.5, '#5E6874'], [1, '#8D97A2']]) aco.addColorStop(o, c);
-  cx.lineJoin = 'round'; cx.strokeStyle = '#0D0F12'; cx.lineWidth = 9; cx.stroke(P7E); cx.stroke(P7D);
-  cx.shadowColor = 'rgba(233,239,245,.75)'; cx.shadowBlur = 22;
+  const g = cx.createRadialGradient(0, 0, 8, 0, 0, 84); g.addColorStop(0, 'rgba(' + PAL.luz + ',.34)'); g.addColorStop(1, 'rgba(' + PAL.luz + ',0)');
+  cx.fillStyle = g; cx.beginPath(); cx.moveTo(0, 0); cx.arc(0, 0, 84, -Math.PI / 2 - 0.42, -Math.PI / 2 + 0.42); cx.closePath(); cx.fill();
+  cx.scale(0.62, 0.62); cx.translate(-50, -54);
+  const cromo = cx.createLinearGradient(18, 8, 82, 88); for (const [o, c] of PAL.cromo) cromo.addColorStop(o, c);
+  const aco = cx.createLinearGradient(82, 8, 18, 88); for (const [o, c] of PAL.aco) aco.addColorStop(o, c);
+  cx.lineJoin = 'round'; cx.strokeStyle = PAL.contorno; cx.lineWidth = 9; cx.stroke(P7E); cx.stroke(P7D);
+  cx.shadowColor = PAL.brilho; cx.shadowBlur = 22;
   cx.fillStyle = cromo; cx.fill(P7E); cx.fillStyle = aco; cx.fill(P7D);
-  cx.shadowBlur = 10; cx.shadowColor = '#fff'; cx.strokeStyle = '#fff'; cx.lineWidth = 2; cx.lineCap = 'round';
+  cx.shadowBlur = 10; cx.shadowColor = PAL.fio; cx.strokeStyle = PAL.fio; cx.lineWidth = 2; cx.lineCap = 'round';
   cx.beginPath(); cx.moveTo(50, 4); cx.lineTo(50, 64); cx.stroke();
   cx.restore();
 }
-function pantera(p, ang) {
-  const [x, y] = p;
-  if (BC) return setaBC(x, y, ang);
-  cx.save(); cx.translate(x, y); cx.rotate(ang);
-  const g = cx.createRadialGradient(0, 0, 12, 0, 0, 70); g.addColorStop(0, 'rgba(' + PAL.cone + ',.42)'); g.addColorStop(1, 'rgba(' + PAL.cone + ',0)');
-  cx.fillStyle = g; cx.beginPath(); cx.moveTo(0, 0); cx.arc(0, 0, 70, -Math.PI / 2 - 0.45, -Math.PI / 2 + 0.45); cx.closePath(); cx.fill();
-  cx.restore();
-  cx.save(); cx.shadowColor = 'rgba(0,0,0,.28)'; cx.shadowBlur = 10; cx.shadowOffsetY = 2;
-  if (BC) { const m = cx.createLinearGradient(x, y - 23, x, y + 23); m.addColorStop(0, '#f4f7fa'); m.addColorStop(0.5, '#8794A2'); m.addColorStop(1, '#E9EFF5'); cx.fillStyle = m; cx.beginPath(); cx.arc(x, y, 24.5, 0, 7); cx.fill(); }
-  cx.fillStyle = PAL.disco; cx.beginPath(); cx.arc(x, y, 23, 0, 7); cx.fill(); cx.restore();
-  cx.save(); cx.translate(x, y); cx.rotate(ang);
-  cx.fillStyle = PAL.ponta; cx.beginPath(); cx.moveTo(0, -32); cx.lineTo(7, -22); cx.lineTo(-7, -22); cx.closePath(); cx.fill();
-  cx.restore();
-  cabeca(x, y + 1, 38);
-}
 
-// ---------- movimento suave ----------
+// ================= movimento =================
 let voo = 0, embalo = 0;
 const parado = () => { voo++; embalo++; };
-// leva a câmera até o alvo com desaceleração (zoom em escala geométrica, giro pelo lado mais curto)
-function voar(alvo, ms = 520) {
+function voar(alvoCam, ms = 520) {
   const id = ++voo, de = { ...cam }, t0 = performance.now();
-  if (alvo.r != null) alvo.r = de.r + ((((alvo.r - de.r) % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI);
+  if (alvoCam.r != null) alvoCam.r = de.r + ((((alvoCam.r - de.r) % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI);
   const passo = t => {
     if (id !== voo) return;
     const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 3);
-    if (alvo.x != null) cam.x = de.x + (alvo.x - de.x) * e;
-    if (alvo.y != null) cam.y = de.y + (alvo.y - de.y) * e;
-    if (alvo.z != null) cam.z = de.z * Math.pow(alvo.z / de.z, e);
-    if (alvo.r != null) cam.r = de.r + (alvo.r - de.r) * e;
+    if (alvoCam.x != null) cam.x = de.x + (alvoCam.x - de.x) * e;
+    if (alvoCam.y != null) cam.y = de.y + (alvoCam.y - de.y) * e;
+    if (alvoCam.z != null) cam.z = de.z * Math.pow(alvoCam.z / de.z, e);
+    if (alvoCam.r != null) cam.r = de.r + (alvoCam.r - de.r) * e;
     desenhar(); if (k < 1) requestAnimationFrame(passo);
   };
   requestAnimationFrame(passo);
 }
-// ao soltar o dedo, o mapa continua deslizando e para devagar
 function embalar(vx, vy) {
   const id = ++embalo; let t0 = performance.now();
   const passo = t => {
@@ -327,7 +406,7 @@ function embalar(vx, vy) {
   requestAnimationFrame(passo);
 }
 
-// ---------- gestos ----------
+// ================= gestos =================
 const dedos = new Map(); let mexeu = 0, angAntes = null, antes = null, vel = [0, 0], tAntes = 0;
 cv.addEventListener('pointerdown', e => { parado(); cv.setPointerCapture(e.pointerId); dedos.set(e.pointerId, [e.clientX, e.clientY]); if (dedos.size === 1) { mexeu = 0; vel = [0, 0]; tAntes = e.timeStamp; } antes = null; angAntes = null; });
 cv.addEventListener('pointermove', e => {
@@ -346,10 +425,7 @@ cv.addEventListener('pointermove', e => {
     const [a, b] = [...dedos.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]);
     if (antes) zoom(d / antes); antes = d; mexeu = 99;
     const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
-    if (angAntes != null) {
-      const da = ((ang - angAntes + 3 * Math.PI) % (2 * Math.PI)) - Math.PI;
-      if (Math.abs(da) < 0.5) { cam.r += da; if (Math.abs(da) > 0.004) modo = 'livre'; }
-    }
+    if (angAntes != null) { const da = ((ang - angAntes + 3 * Math.PI) % (2 * Math.PI)) - Math.PI; if (Math.abs(da) < 0.5) { cam.r += da; if (Math.abs(da) > 0.004) modo = 'livre'; } }
     angAntes = ang;
   }
   desenhar();
@@ -365,28 +441,25 @@ const limZ = z => Math.max(0.03, Math.min(4, z));
 const zoom = f => { cam.z = limZ(cam.z * f); desenhar(); };
 $('#bVolta').onclick = () => { if (navegando) parar(); inverter(); };
 $('#bNorte').onclick = () => {
-  if (modo === 'norte' && navegando) modo = 'direcao';
-  else { modo = 'norte'; voar({ r: 0 }, 420); }
+  if (modo === 'norte' && navegando) modo = 'direcao'; else { modo = 'norte'; voar({ r: 0 }, 420); }
   if (modo === 'direcao' && eu) { seguir = true; const [x, y] = xy(eu); voar({ x, y, r: -rumo * Math.PI / 180 }, 420); }
   gravar('modo', modo === 'livre' ? 'norte' : modo); desenhar();
 };
-// troca branco/escuro e recarrega já no outro tema (o destino escolhido volta sozinho)
-$('#bTema').onclick = () => {
-  try { localStorage.setItem('tema', BC ? 'claro' : 'bc'); sessionStorage.setItem('volta', JSON.stringify({ destino, nomeDestino, origemManual, cam })); } catch {}
-  const u = new URL(location.href); u.searchParams.delete('tema'); location.replace(u.href);
-};
-$('#bMais').onclick =() => voar({ z: limZ(cam.z * 1.7) }, 320); $('#bMenos').onclick = () => voar({ z: limZ(cam.z / 1.7) }, 320);
+$('#bMais').onclick = () => voar({ z: limZ(cam.z * 1.7) }, 320);
+$('#bMenos').onclick = () => voar({ z: limZ(cam.z / 1.7) }, 320);
 $('#bEu').onclick = () => { ligarGps(); if (eu) { const [x, y] = xy(eu); seguir = true; voar({ x, y, z: Math.max(cam.z, 0.7) }); } };
+$('#bTema').onclick = () => { tema = tema === 'escuro' ? 'claro' : 'escuro'; gravar('tema2', tema); aplicarTema(); };
 
-// ---------- folha ----------
+// ================= folha de baixo =================
 const el = (tag, texto, cls) => { const e = document.createElement(tag); if (texto) e.textContent = texto; if (cls) e.className = cls; return e; };
+const titulo = t => el('b', t, 'tit cromo');
 let mini = false;
 function folha(...filhos) {
   const f = $('#folha');
   if (!filhos.length) { f.replaceChildren(); return; }
   const novo = !f.childElementCount;
-  const alca = el('button', '', 'alca'); alca.setAttribute('aria-label', mini ? 'Mostrar' : 'Minimizar');
-  alca.onclick = () => { mini = !mini; f.classList.toggle('mini', mini); alca.setAttribute('aria-label', mini ? 'Mostrar' : 'Minimizar'); };
+  const alca = el('button', '', 'alca'); alca.setAttribute('aria-label', 'Minimizar ou mostrar');
+  alca.onclick = () => { mini = !mini; f.classList.toggle('mini', mini); };
   f.classList.toggle('mini', mini);
   f.replaceChildren(alca, ...filhos);
   if (novo) { f.classList.remove('entra'); void f.offsetWidth; f.classList.add('entra'); }
@@ -396,11 +469,11 @@ function acoes(...lista) {
   for (const [t, f, cls] of lista) { const b = el('button', t, cls); b.onclick = f; d.append(b); }
   return d;
 }
-const botaoGarupa = () => [garupa ? 'Com garupa' : 'Sozinho', () => { garupa = !garupa; gravar('garupa', garupa); calcular(); }, garupa ? 'on' : ''];
+const botaoGarupa = () => [garupa ? 'Com garupa' : 'Sozinho', () => { garupa = !garupa; gravar('garupa', garupa); calcular(); }, garupa ? 'ativo' : ''];
 
 function tocou(p) {
   if (salvarComo) { meus[salvarComo] = p; gravar('lugares', meus); const n = salvarComo; salvarComo = null; chips(); irPara(n, p); return; }
-  folha(el('b', 'Ponto no mapa'), acoes(
+  folha(titulo('Ponto no mapa'), acoes(
     ['Ir até aqui', () => irPara('Ponto no mapa', p), 'pri'],
     ['Sair daqui', () => { origemManual = p; eu = null; desligarGps(); destino ? calcular() : (folha(), desenhar()); }],
     ['Salvar lugar', () => salvar(p)],
@@ -408,33 +481,34 @@ function tocou(p) {
     ['Apagar marca', () => { marcas = marcas.filter(m => Rotas.metros(m.p, p) > 40); gravar('marcas', marcas); destino ? calcular() : folha(); desenhar(); }],
     ['Fechar', () => folha()]));
 }
-function salvar(p) { // sem prompt(): a página privada bloqueia
-  const i = el('input'); i.placeholder = 'Nome do lugar'; i.style.width = '100%';
-  folha(el('b', 'Salvar lugar'), i, acoes(['Salvar', () => { const n = i.value.trim(); if (n) { meus[n] = p; gravar('lugares', meus); chips(); folha(); } }, 'pri'], ['Cancelar', () => folha()]));
+function salvar(p) {
+  const i = el('input', '', 'campo'); i.placeholder = 'Nome do lugar';
+  folha(titulo('Salvar lugar'), i, acoes(['Salvar', () => { const n = i.value.trim(); if (n) { meus[n] = p; gravar('lugares', meus); chips(); folha(); } }, 'pri'], ['Cancelar', () => folha()]));
   i.focus();
 }
 function marcar(tipo, p) { marcas.push({ tipo, p }); gravar('marcas', marcas); destino ? calcular() : folha(); desenhar(); }
 
 function chips() {
   $('#chips').replaceChildren(...lugares().map(([n, p]) => {
-    const b = el('button', p ? n : '＋ ' + n, p ? '' : 'falta');
+    const b = el('button', '', 'placa' + (p ? '' : ' falta')); b.append(el('i'), document.createTextNode(n));
     b.onclick = () => {
       if (p) return irPara(n, p);
       salvarComo = n;
-      folha(el('b', 'Onde fica "' + n + '"?'), el('p', 'Toque no mapa em cima do lugar. Fica salvo só neste celular.'),
+      folha(titulo('Onde fica ' + n + '?'), el('p', 'Toque no mapa em cima do lugar. Fica salvo só neste celular.', 'sub'),
         acoes(['Usar minha posição', () => eu ? tocou(eu) : ligarGps()], ['Cancelar', () => { salvarComo = null; folha(); }]));
     };
     return b;
   }));
 }
 
+// ================= busca =================
 const sem = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const RUAS = MAPA.nomes.filter(Boolean);
 const LUGARES = (MAPA.lugares || []).map(([n, la, lo, rua]) => [n, [la / 1e5, lo / 1e5], rua]);
 function abrirAchado(n, p) {
   $('#busca').value = ''; $('#achados').replaceChildren(); $('#busca').blur();
   const [x, y] = xy(p); voar({ x, y, z: 0.9 }, 650); seguir = false; destino = p; rota = null;
-  folha(el('b', n), el('p', 'Confira o ponto no mapa.'), acoes(['Ir até aqui', () => irPara(n, p), 'pri'], ['Salvar lugar', () => salvar(p)], ['Fechar', limpar]));
+  folha(titulo(n), el('p', 'Confira o ponto no mapa.', 'sub'), acoes(['Ir até aqui', () => irPara(n, p), 'pri'], ['Salvar lugar', () => salvar(p)], ['Fechar', limpar]));
   desenhar();
 }
 $('#busca').oninput = e => {
@@ -450,23 +524,17 @@ $('#busca').oninput = e => {
       ...RUAS.filter(bate).slice(0, 6).map(n => { const g = G.trechos.filter(t => t.nome === n).flatMap(t => t.g); return [n, g[g.length >> 1], 'rua']; })];
     if (!achou.length) achou = [['Não achei "' + bruto + '"', null, 'No Google Maps, segure em cima do lugar, copie a coordenada e cole aqui']];
   }
-  $('#achados').replaceChildren(...achou.slice(0, 10).map(([n, p, extra]) => {
-    const b = el('button', n); b.append(el('small', extra));
-    b.onclick = () => p && abrirAchado(n, p);
-    return b;
-  }));
+  $('#achados').replaceChildren(...achou.slice(0, 10).map(([n, p, extra]) => { const b = el('button', n); b.append(el('small', extra)); b.onclick = () => p && abrirAchado(n, p); return b; }));
 };
 
-// ---------- rota ----------
+// ================= rota =================
 let volta = false;
 function irPara(nome, p) { volta = false; destino = p; nomeDestino = nome; calcular(); }
-// troca saída e chegada (ida vira volta)
 function inverter() {
   const saida = (volta && origemManual) || eu || origemManual;
   if (!saida || !destino) return;
   const lugar = lugares().find(([, p]) => p && Rotas.metros(p, saida) < 200);
-  const novoDestino = lugar ? lugar[1] : saida;
-  origemManual = destino; volta = true; destino = novoDestino;
+  origemManual = destino; volta = true; destino = lugar ? lugar[1] : saida;
   nomeDestino = lugar ? lugar[0] : 'Ponto de saída';
   calcular();
 }
@@ -474,10 +542,10 @@ const km = m => m < 950 ? Math.round(m / 10) * 10 + ' m' : (m / 1000).toFixed(1)
 function calcular(silencioso) {
   const de = (volta && origemManual) || eu || origemManual;
   if (!destino) return;
-  if (!de) { ligarGps(); folha(el('b', 'De onde você sai?'), el('p', 'Libere a localização ou toque no mapa e escolha "Sair daqui".'), acoes(['Fechar', () => folha()])); desenhar(); return; }
+  if (!de) { ligarGps(); folha(titulo('De onde você sai?'), el('p', 'Libere a localização ou toque no mapa e escolha "Sair daqui".', 'sub'), acoes(['Fechar', () => folha()])); desenhar(); return; }
   const h = new Date().getHours() + new Date().getMinutes() / 60;
   const pico = (h >= 7 && h < 8.5) || (h >= 11.5 && h < 13.5) || (h >= 17 && h < 19);
-  // rota validada no Google: saída perto de um destino salvo e chegada num destino salvo, sem marcas no caminho
+  // rota confirmada no Google: só entre dois destinos salvos, sem marcas novas no caminho
   const salvo = q => lugares().find(([, p]) => p && Rotas.metros(p, q) < 200);
   const daqui = salvo(de), praLa = salvo(destino);
   if (daqui && praLa && daqui !== praLa && !navegando) {
@@ -487,31 +555,32 @@ function calcular(silencioso) {
     rota.validada = comMarcas && comMarcas.linha.length === rota.linha.length && (MAPA.confirmadas || []).includes(FIXOS.findIndex(x => x[0] === daqui[0]) + '>' + FIXOS.findIndex(x => x[0] === praLa[0]));
     if (!rota.validada) rota = comMarcas;
   } else rota = Rotas.rota(G, de, destino, { garupa, pico, marcas, rua: praLa && (FIXOS.find(x => x[0] === praLa[0]) || [])[2] });
-  if (!rota) { folha(el('b', 'Não achei caminho até ' + nomeDestino), acoes(['Fechar', limpar])); return; }
+  if (!rota) { folha(titulo('Sem caminho até ' + nomeDestino), acoes(['Fechar', limpar])); return; }
   preparar();
   if (silencioso) return desenhar();
   const num = el('div', '', 'num');
-  for (const [v, r] of [[km(rota.m), 'distância'], [rota.min + ' min', 'a 25 km/h'], ['+' + rota.ganho + ' m', 'de subida']]) {
-    const d = el('div'); d.append(el('b', v), el('span', r)); num.append(d);
-  }
+  for (const [v, r] of [[km(rota.m), 'Distância'], [rota.min + ' min', 'a 25 km/h'], ['+' + rota.ganho + ' m', 'Subida']]) { const d = el('div'); d.append(el('b', v), el('span', r)); num.append(d); }
   const avisos = [];
-  const aviso = (t, ok) => avisos.push(el('div', t, ok ? 'aviso ok' : 'aviso'));
+  const aviso = (t, tipo) => { const d = el('div', '', 'aviso ' + tipo); d.innerHTML = ic(tipo === 'alerta' ? 'alerta' : tipo === 'ok' ? 'ok' : 'info'); d.append(el('span', t)); avisos.push(d); };
   const ev = Object.entries(rota.evitadas), rp = Object.entries(rota.rapidas);
-  for (const [n, m] of ev) aviso(`Passa ${km(m)} pela ${n}`);
-  if (rp.length) aviso(`Vias principais ou acima de 40: ${rp.map(([n, m]) => n + ' (' + km(m) + ')').join(', ')}`);
-  if (!ev.length && !rp.length) aviso('Sem avenidas da sua lista no caminho', true);
-  for (const s of rota.subidas.slice(0, 3)) aviso(`Subida de ~${s.grau}% na ${s.rua} (${km(s.m)})` + (garupa ? ': talvez precise descer e empurrar' : ''));
-  if (rota.subidas.length > 3) aviso(`Mais ${rota.subidas.length - 3} trechos de subida (roxo no mapa)`);
-  if (rota.cargas > 0.45) aviso(rota.cargas > 1 ? 'Não cabe em uma carga' : 'Ida e volta pode não caber em uma carga: confira a bateria');
-  if (rota && rota.validada) aviso('Confirmada quadra por quadra no Google: sem contramão (' + new Date(MAPA.validado).toLocaleDateString('pt-BR') + ')', true);
-  else aviso('Rota ainda não confirmada quadra por quadra: navegue pelo Google Maps');
-  if (!rota.validada) for (const [n, m] of Object.entries(rota.duvidas)) aviso(`Mão não confirmada no mapa: ${n} (${km(m)}). Confira a placa`);
-  if (!rota.validada) aviso('A navegação é feita pelo Google Maps, que respeita a mão das ruas. Este app escolhe o caminho longe das avenidas.', true);
-  if (pico) aviso('Horário de pico: priorizei ruas mais calmas', true);
-  folha(el('b', nomeDestino), num, ...avisos, (rota.validada ? acoes(['Navegar no app', comecar, 'pri'], ['Google Maps', abrirGoogle], ['⇄ Volta', inverter], botaoGarupa(), ['Fechar', limpar]) : acoes(['Navegar pelo Google Maps', abrirGoogle, 'pri'], ['⇄ Volta', inverter], botaoGarupa(), ['Fechar', limpar])));
+  if (rota.validada) aviso('Confirmada quadra por quadra no Google: sem contramão (' + new Date(MAPA.validado).toLocaleDateString('pt-BR') + ')', 'ok');
+  else aviso('Rota ainda não confirmada quadra por quadra: navegue pelo Google Maps', 'alerta');
+  for (const [n, m] of ev) aviso(`Passa ${km(m)} pela ${n}`, 'alerta');
+  if (rp.length) aviso(`Vias principais ou acima de 40: ${rp.map(([n, m]) => n + ' (' + km(m) + ')').join(', ')}`, 'alerta');
+  if (!ev.length && !rp.length) aviso('Sem avenidas da sua lista no caminho', 'ok');
+  for (const s of rota.subidas.slice(0, 3)) aviso(`Subida de ~${s.grau}% na ${s.rua} (${km(s.m)})` + (garupa ? ': talvez precise descer e empurrar' : ''), garupa ? 'alerta' : 'info');
+  if (rota.subidas.length > 3) aviso(`Mais ${rota.subidas.length - 3} trechos de subida (pontilhado no mapa)`, 'info');
+  if (rota.cargas > 0.45) aviso(rota.cargas > 1 ? 'Não cabe em uma carga' : 'Ida e volta pode não caber em uma carga: confira a bateria', 'alerta');
+  if (!rota.validada) for (const [n, m] of Object.entries(rota.duvidas)) aviso(`Mão não confirmada no mapa: ${n} (${km(m)}). Confira a placa`, 'alerta');
+  if (!rota.validada) aviso('O Google Maps respeita a mão das ruas; este app só escolhe o caminho longe das avenidas.', 'info');
+  if (pico) aviso('Horário de pico: priorizei ruas mais calmas', 'info');
+  const leg = el('div', '', 'legenda'); leg.innerHTML = '<span><i></i>Rota</span><span><i class="tr"></i>Avenida evitada</span><span><i class="po"></i>Subida</span>';
+  folha(titulo(nomeDestino), num, ...avisos, leg, rota.validada
+    ? acoes(['Navegar', comecar, 'pri'], ['Google Maps', abrirGoogle], ['Fazer a volta', inverter], botaoGarupa(), ['Fechar', limpar])
+    : acoes(['Navegar pelo Google Maps', abrirGoogle, 'pri'], ['Fazer a volta', inverter], botaoGarupa(), ['Fechar', limpar]));
   enquadrar();
 }
-// o Google respeita a mão das ruas; as paradas seguram ele no nosso caminho (longe das avenidas)
+// o Google respeita a mão das ruas; as paradas seguram ele no nosso caminho
 function abrirGoogle() {
   const l = rota.linha, ac = [0];
   for (let i = 1; i < l.length; i++) ac[i] = ac[i - 1] + Rotas.metros(l[i - 1], l[i]);
@@ -528,7 +597,7 @@ function enquadrar() {
 }
 function limpar() { volta = false; rota = destino = null; parar(); folha(); desenhar(); }
 
-// ---------- navegação ----------
+// ================= navegação =================
 let manobras = [], acum = [], trava = null, fora = 0, simulando = null;
 const azim = (a, b) => (Math.atan2((b[1] - a[1]) * KX, (b[0] - a[0]) * KY) * 180 / Math.PI + 360) % 360;
 function preparar() {
@@ -540,12 +609,18 @@ function preparar() {
     k += rota.partes[i].g.length - 1;
     if (!l[k - 1] || !l[k + 1]) continue;
     const g = ((azim(l[k], l[k + 1]) - azim(l[k - 1], l[k]) + 540) % 360) - 180;
-    const mudouRua = nomes[i + 1] && nomes[i] !== nomes[i + 1];
     if (Math.abs(g) < 35) continue;
-    const lado = g > 0 ? 'direita' : 'esquerda';
-    manobras.push({ s: acum[k], texto: `${g > 0 ? '↱' : '↰'} ${Math.abs(g) > 140 ? 'Retorne pela ' : 'Vire à '}${lado}${mudouRua ? ' na ' + nomes[i + 1] : ''}` });
+    const mudouRua = nomes[i + 1] && nomes[i] !== nomes[i + 1];
+    const lado = g > 0 ? 'direita' : 'esquerda', retorno = Math.abs(g) > 140;
+    manobras.push({ s: acum[k], icone: retorno ? 'retorno' : lado, acao: (retorno ? 'Retorne pela ' : 'Vire à ') + lado, rua: mudouRua ? nomes[i + 1] : '' });
   }
-  manobras.push({ s: acum.at(-1), texto: '🏁 Chegada: ' + nomeDestino });
+  manobras.push({ s: acum.at(-1), icone: 'chegada', acao: 'Chegada', rua: nomeDestino });
+}
+function placaManobra(icone, grande, pequeno, foraDaRota) {
+  const m = $('#manobra'); m.classList.toggle('aviso-fora', !!foraDaRota);
+  m.innerHTML = `<div class="seta">${ic(icone, '')}</div><div><b></b><span></span></div>`;
+  m.querySelector('.seta svg').setAttribute('class', 'ic');
+  m.querySelector('b').textContent = grande; m.querySelector('span').textContent = pequeno;
 }
 function andou(p) {
   if (!navegando || !rota) return;
@@ -555,12 +630,12 @@ function andou(p) {
     if (d < melhor) { melhor = d; onde = acum[i - 1] + Math.min(Rotas.metros(rota.linha[i - 1], p), acum[i] - acum[i - 1]); }
   }
   fora = melhor > 40 ? fora + 1 : 0;
-  if (fora >= 3) { fora = 0; if (rota.validada) { $('#manobra').textContent = '⚠ Fora da rota validada: volte pra linha amarela ou abra no Google Maps'; return; } calcular(true); return; }
+  if (fora >= 3) { fora = 0; if (rota.validada) { placaManobra('fora', 'Fora da rota', 'Volte pro fio da rota ou abra no Google Maps', true); return; } calcular(true); return; }
   const falta = acum.at(-1) - onde;
-  if (falta < 25) { $('#manobra').textContent = '🏁 Você chegou: ' + nomeDestino; return; }
+  if (falta < 25) { placaManobra('chegada', 'Chegou', nomeDestino); return; }
   const m = manobras.find(m => m.s > onde + 5) || manobras.at(-1);
-  $('#manobra').textContent = `Em ${km(m.s - onde)}: ${m.texto}`;
-  folha(el('b', `${km(falta)} · ${Math.max(1, Math.round(falta / 1000 / 25 * 60))} min até ${nomeDestino}`),
+  placaManobra(m.icone, km(m.s - onde), m.acao + (m.rua ? (m.icone === 'chegada' ? ': ' : ' na ') + m.rua : ''));
+  folha(titulo(`${km(falta)} · ${Math.max(1, Math.round(falta / 1000 / 25 * 60))} min`), el('p', 'até ' + nomeDestino, 'sub'),
     acoes(['Parar', () => { parar(); calcular(); }], ['Buraco aqui', () => marcar2('buraco')], ['Interditado', () => marcar2('interditado')], ['Contramão aqui', () => marcar2('contramao')]));
 }
 function marcar2(tipo) {
@@ -573,27 +648,22 @@ async function comecar() {
   parado(); navegando = true; seguir = true; fora = 0; if (modo === 'livre') modo = 'norte'; document.body.classList.add('nav'); cam.z = 1.4;
   try { trava = await navigator.wakeLock.request('screen'); } catch {}
   if (new URLSearchParams(location.search).has('sim')) simular(); else ligarGps();
-  const p = eu || rota.linha[0];
-  posicao(p, azim(rota.linha[0], rota.linha[1] || rota.linha[0]));
+  posicao(eu || rota.linha[0], azim(rota.linha[0], rota.linha[1] || rota.linha[0]));
 }
-function parar() {
-  navegando = false; cam.r = 0; document.body.classList.remove('nav');
-  trava?.release().catch(() => {}); trava = null; clearInterval(simulando);
-}
+function parar() { navegando = false; cam.r = 0; document.body.classList.remove('nav'); trava?.release().catch(() => {}); trava = null; clearInterval(simulando); }
 document.addEventListener('visibilitychange', async () => { if (navegando && document.visibilityState === 'visible') try { trava = await navigator.wakeLock.request('screen'); } catch {} });
 function simular() {
   let s = 0; clearInterval(simulando);
   simulando = setInterval(() => {
-    s += 12; let i = acum.findIndex(a => a >= s); if (i < 1) return clearInterval(simulando);
+    s += 12; const i = acum.findIndex(a => a >= s); if (i < 1) return clearInterval(simulando);
     const a = rota.linha[i - 1], b = rota.linha[i], f = (s - acum[i - 1]) / (acum[i] - acum[i - 1] || 1);
     posicao([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f], azim(a, b));
   }, 400);
 }
 
-// ---------- GPS ----------
-let vigia = null, ultima = null, precisao = 0, modo = ler('modo', 'norte');
-// a pantera desliza de um ponto do GPS ao outro (e a câmera vai junto), em vez de pular
-let visto = null, rumoVisto = 0;
+// ================= GPS =================
+let vigia = null, ultima = null, precisao = 0, modo = ler('modo', 'norte'), visto = null, rumoVisto = 0, deslize = 0;
+// a seta desliza de um ponto do GPS ao outro (e a câmera vai junto)
 function posicao(p, direcao) {
   const de = visto || p, rDe = rumoVisto;
   eu = p;
@@ -609,17 +679,14 @@ function posicao(p, direcao) {
   requestAnimationFrame(passo);
   andou(p);
 }
-let deslize = 0;
 function ligarGps() {
   if (vigia != null || !navigator.geolocation) return;
   vigia = navigator.geolocation.watchPosition(g => {
     const p = [g.coords.latitude, g.coords.longitude], primeira = !eu;
-    // posição ruim (só Wi-Fi ou antena) não entra se já existe uma boa
-    if (g.coords.accuracy > 60 && eu && precisao <= 60) return;
+    if (g.coords.accuracy > 60 && eu && precisao <= 60) return; // posição ruim não substitui uma boa
     precisao = Math.round(g.coords.accuracy);
-    const ind = $('#gps'); ind.hidden = false;
-    ind.textContent = precisao <= 30 ? 'GPS ok · ±' + precisao + ' m' : 'GPS fraco · ±' + precisao + ' m · espere ou vá pra céu aberto';
-    ind.className = precisao <= 30 ? 'bom' : 'ruim';
+    const ind = $('#gps'); ind.hidden = false; ind.className = 'placa' + (precisao <= 30 ? '' : ' ruim');
+    ind.innerHTML = '<i></i>'; ind.append(precisao <= 30 ? 'GPS ±' + precisao + ' M' : 'GPS FRACO ±' + precisao + ' M');
     let d = g.coords.speed > 1 ? g.coords.heading : null;
     if (d == null && ultima && Rotas.metros(ultima, p) > 8) d = azim(ultima, p);
     if (!ultima || Rotas.metros(ultima, p) > 8) ultima = p;
@@ -627,13 +694,15 @@ function ligarGps() {
     if (destino && !navegando && precisao <= 60 && (!rota || Rotas.metros(p, rota.linha[0]) > 80)) calcular();
     else if (primeira && destino && !rota) calcular();
     else if (primeira && !destino) { const [x, y] = xy(p); voar({ x, y, z: 0.6 }, 800); }
-  }, erro => { desligarGps(); folha(el('b', 'Sem GPS aqui'), el('p', erro.code === 1 ? 'A localização foi negada ou está bloqueada. Toque no mapa e escolha "Sair daqui".' : 'Não consegui sua posição agora.'), acoes(['Fechar', () => folha()])); }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 });
+  }, erro => { desligarGps(); folha(titulo('Sem GPS aqui'), el('p', erro.code === 1 ? 'A localização foi negada ou está bloqueada. Toque no mapa e escolha "Sair daqui".' : 'Não consegui sua posição agora.', 'sub'), acoes(['Fechar', () => folha()])); }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 });
 }
 function desligarGps() { if (vigia != null) navigator.geolocation.clearWatch(vigia); vigia = null; }
 
 addEventListener('resize', ajustar);
-chips(); ajustar();
-// ---------- cadeado (só na versão do site) ----------
+aplicarTema(); chips(); ajustar();
+document.fonts?.ready.then(desenhar);
+
+// ================= cadeado (só na versão do site) =================
 async function abrirCadeado(senha) {
   const C = self.CADEADO, b = t => Uint8Array.from(atob(t), c => c.charCodeAt(0));
   const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(senha), 'PBKDF2', false, ['deriveKey']);
@@ -641,33 +710,29 @@ async function abrirCadeado(senha) {
   return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b(C.iv) }, k, b(C.dados))));
 }
 if (self.CADEADO) {
-  const salvo = ler('cofre', null);
-  if (salvo && salvo.iv === self.CADEADO.iv) { FIXOS = salvo.lugares; chips(); }
+  const guardado = ler('cofre', null);
+  if (guardado && guardado.iv === self.CADEADO.iv) { FIXOS = guardado.lugares; chips(); }
   else {
-    // teclado numérico na tela: não depende do teclado do iPhone
     const d = el('div'); d.id = 'cadeado';
+    d.innerHTML = '<svg class="simb so-escuro"><use href="#p7"/></svg><svg class="simb so-claro"><use href="#p7d"/></svg><div class="nome"><b class="cromo">PANTERA</b><span>GPS · Bauru</span></div>';
     let pin = '';
-    const bolas = el('div', '', 'bolas'), erro = el('p'), tecl = el('div', '', 'tecl');
-    const mostrar = () => { bolas.replaceChildren(...[0, 1, 2, 3].map(i => el('i', '', i < pin.length ? 'on' : ''))); };
+    const pontos = el('div', '', 'pontos'), msg = el('p'), tecl = el('div', '', 'tecl');
+    const mostrar = () => pontos.replaceChildren(...[0, 1, 2, 3].map(i => el('i', '', i < pin.length ? 'on' : '')));
     const tentar = async () => {
-      erro.textContent = 'Abrindo…';
-      try { FIXOS = await abrirCadeado(pin); gravar('cofre', { iv: self.CADEADO.iv, lugares: FIXOS }); chips(); d.classList.add('sai'); setTimeout(() => d.remove(), 360); }
-      catch { erro.textContent = 'Senha errada.'; pin = ''; mostrar(); }
+      msg.textContent = 'Abrindo';
+      try { FIXOS = await abrirCadeado(pin); gravar('cofre', { iv: self.CADEADO.iv, lugares: FIXOS }); chips(); d.classList.add('sai'); setTimeout(() => d.remove(), 420); }
+      catch { msg.textContent = 'Senha errada'; pin = ''; mostrar(); }
     };
-    for (const k of ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫']) {
-      const b = el('button', k); if (!k) { b.style.visibility = 'hidden'; }
-      b.onclick = () => { if (k === '⌫') pin = pin.slice(0, -1); else if (pin.length < 8) pin += k; mostrar(); erro.textContent = ''; if (pin.length === 4) tentar(); };
+    for (const k of ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'apaga']) {
+      const b = el('button', k === 'apaga' ? '' : k, k ? (k === 'apaga' ? 'apaga' : '') : 'sem');
+      if (k === 'apaga') { b.innerHTML = '<svg class="ic" viewBox="0 0 24 24"><path d="M9 5h11v14H9l-6-7Z"/><path d="m12 9 5 6M17 9l-5 6"/></svg>'; b.setAttribute('aria-label', 'Apagar'); }
+      b.onclick = () => { if (k === 'apaga') pin = pin.slice(0, -1); else if (pin.length < 8) pin += k; mostrar(); msg.textContent = ''; if (pin.length === 4) tentar(); };
       tecl.append(b);
     }
     mostrar();
-    d.append(el('h1', 'PANTERA GPS'), bolas, tecl, erro); document.body.append(d);
+    d.append(pontos, tecl, msg); document.body.append(d);
   }
 }
-// voltando da troca de tema: mesmo lugar no mapa e mesmo destino
-try {
-  const v = JSON.parse(sessionStorage.getItem('volta') || 'null'); sessionStorage.removeItem('volta');
-  if (v) { Object.assign(cam, v.cam); origemManual = v.origemManual; if (v.destino) irPara(v.nomeDestino, v.destino); else desenhar(); }
-} catch {}
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js');
 </script>
 </body>
