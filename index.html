@@ -4,73 +4,92 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#101113">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f3f1ec">
 <title>Pantera GPS</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icone.svg">
 <link rel="apple-touch-icon" href="icone.png">
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&family=Michroma&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#101113;--painel:#1a1c1f;--linha:#2c2f34;--tx:#eceae6;--fraco:#97948e;--amb:#ffb02e;--ruim:#ff5a4d;color-scheme:dark}
+/* claro, leve e de vidro: mapa de dia, painéis translúcidos, traço fino */
+:root{--bg:#f3f1ec;--vidro:rgba(255,255,255,.86);--vidro2:rgba(255,255,255,.92);--tx:#1d1f23;--fraco:#8a8d93;--sutil:rgba(20,24,30,.06);--amb:#f08a00;--ambsuave:rgba(240,138,0,.12);--ruim:#e5484d;--bom:#2f9e6a;--sombra:0 8px 30px rgba(30,32,40,.12),0 1px 3px rgba(30,32,40,.08);--mola:cubic-bezier(.22,1,.36,1);color-scheme:light}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font:15px/1.4 Geist,system-ui,sans-serif}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font:15px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
-button,input{font:inherit;color:inherit;background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:10px 14px;min-height:44px}
-button{cursor:pointer;font-weight:600}
-button.pri{background:var(--amb);border-color:var(--amb);color:#1a1200}
-button.on{border-color:var(--amb);color:var(--amb)}
-#topo{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 10px) 12px 0;display:flex;flex-direction:column;gap:8px}
-h1{font:12px Michroma,sans-serif;letter-spacing:.18em;color:var(--amb)}
-#busca{width:100%;min-width:0;user-select:text}
-#achados{max-height:46vh;overflow:auto}
-#achados small{display:block;font-weight:400;color:var(--fraco)}
-#achados{display:flex;flex-direction:column;gap:4px}
-#achados button{text-align:left}
-#chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
-#chips button{white-space:nowrap;flex:none}
-#chips button.falta{color:var(--fraco);border-style:dashed}
-#lado{position:fixed;right:12px;top:45%;display:flex;flex-direction:column;gap:8px}
-#lado button{width:48px;height:48px;padding:0;font-size:20px}
-#folha{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 8px);background:var(--painel);border:1px solid var(--linha);border-radius:18px;padding:14px;max-height:48vh;overflow:auto}
+button,input{font:inherit;color:inherit;background:var(--sutil);border:0;border-radius:14px;padding:10px 14px;min-height:44px;-webkit-user-select:none;user-select:none}
+button{cursor:pointer;font-weight:500;transition:transform .18s var(--mola),background .2s}
+button:active{transform:scale(.96)}
+button.pri{background:var(--amb);color:#fff}
+button.on{background:var(--ambsuave);color:var(--amb)}
+.vidro{background:var(--vidro);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);box-shadow:var(--sombra)}
+#topo{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 10px) 12px 0;display:flex;flex-direction:column;gap:8px;transition:opacity .3s,transform .4s var(--mola)}
+h1{font-weight:600;font-size:11px;letter-spacing:.2em;color:var(--fraco);text-transform:uppercase}
+#busca{width:100%;min-width:0;user-select:text;-webkit-user-select:text;border-radius:16px;padding-left:40px;font-size:16px;background:var(--vidro) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%238a8d93' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Cpath d='m12.5 12.5 4 4'/%3E%3C/svg%3E") 14px center no-repeat;-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);box-shadow:var(--sombra);outline:0}
+#busca::placeholder{color:var(--fraco)}
+#achados{max-height:46vh;overflow:auto;display:flex;flex-direction:column;border-radius:16px}
+#achados:empty{display:none}
+#achados button{text-align:left;background:transparent;border-radius:0;border-bottom:1px solid var(--sutil)}
+#achados small{display:block;font-weight:400;font-size:13px;color:var(--fraco)}
+#chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0 8px}
+#chips::-webkit-scrollbar{display:none}
+#chips button{white-space:nowrap;flex:none;min-height:36px;padding:7px 14px;border-radius:999px;font-size:14px;background:var(--vidro2);box-shadow:0 2px 10px rgba(30,32,40,.08)}
+#chips button.falta{color:var(--fraco);background:var(--vidro)}
+#lado{position:fixed;right:12px;top:calc(env(safe-area-inset-top) + 150px);display:flex;flex-direction:column;border-radius:16px;overflow:hidden}
+#lado button{width:46px;height:46px;min-height:0;padding:0;border-radius:0;background:transparent;display:grid;place-items:center;color:var(--tx)}
+#lado button+button{border-top:1px solid var(--sutil)}
+#lado button.on{color:var(--amb)}
+#lado svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:transform .35s var(--mola)}
+#folha{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 8px);border-radius:24px;padding:8px 16px 16px;max-height:46vh;overflow:auto;transition:max-height .4s var(--mola)}
 #folha:empty{display:none}
-#folha .alca{display:block;margin:-8px auto 6px;min-height:28px;padding:0 28px;border:0;background:transparent;color:var(--fraco);font-size:18px}
+#folha.entra{animation:subir .45s var(--mola)}
+@keyframes subir{from{transform:translateY(30px);opacity:0}}
+#folha>b{display:block;font-size:19px;font-weight:600;letter-spacing:-.01em}
+#folha p{color:var(--fraco);margin-top:2px}
+#folha .alca{display:block;margin:0 auto 6px;min-height:22px;width:60px;padding:0;background:transparent;position:relative}
+#folha .alca::after{content:"";position:absolute;left:50%;top:8px;width:38px;height:5px;margin-left:-19px;border-radius:3px;background:rgba(20,24,30,.16)}
 #folha.mini>:not(.alca):not(b){display:none}
-#folha.mini{padding-bottom:10px}
-.num{display:flex;gap:18px;margin:4px 0 8px}.num b{display:block;font:20px Michroma,sans-serif}.num span{color:var(--fraco);font-size:12px}
-.aviso{border-left:3px solid var(--ruim);padding-left:8px;margin:6px 0;font-size:14px}
-.ok{border-left-color:#5fd38d}
-.acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.acoes button{flex:1 1 30%}
-#manobra{position:fixed;left:8px;right:8px;top:calc(env(safe-area-inset-top) + 8px);background:var(--painel);border:2px solid var(--amb);border-radius:18px;padding:14px;font-size:20px;font-weight:700;display:none}
-body.nav #topo{display:none}body.nav #manobra{display:block}
-#cadeado{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;justify-content:center;gap:12px;padding:32px}
+#folha.mini{padding-bottom:12px}
+.num{display:flex;gap:22px;margin:8px 0 10px}.num b{display:block;font-size:22px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}.num span{color:var(--fraco);font-size:12px}
+.aviso{display:flex;gap:8px;align-items:flex-start;padding:7px 0;font-size:14px;color:#3a3d43;border-top:1px solid var(--sutil)}
+.aviso::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;margin-top:6px;background:var(--ruim)}
+.aviso.ok::before{background:var(--bom)}
+.acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.acoes button{flex:1 1 22%;font-size:14px;min-height:42px;padding:8px 10px}
+#manobra{position:fixed;left:8px;right:8px;top:calc(env(safe-area-inset-top) + 8px);border-radius:22px;padding:14px 18px;font-size:19px;font-weight:600;letter-spacing:-.01em;display:none;border-left:4px solid var(--amb)}
+body.nav #topo{opacity:0;pointer-events:none;transform:translateY(-20px)}body.nav #manobra{display:block;animation:descer .45s var(--mola)}
+@keyframes descer{from{transform:translateY(-24px);opacity:0}}
+#cadeado{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;justify-content:center;gap:18px;padding:32px;transition:opacity .35s,transform .35s}
+#cadeado.sai{opacity:0;transform:scale(1.04)}
 #cadeado h1,#cadeado p{text-align:center}
-#cadeado .bolas{text-align:center;font-size:28px;letter-spacing:12px;color:var(--amb)}
-#cadeado .tecl{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:300px;width:100%;margin:0 auto}
-#cadeado .tecl button{height:64px;font-size:26px;border-radius:18px}
-#gps{position:fixed;left:12px;top:calc(env(safe-area-inset-top) + 150px);font-size:13px;font-weight:600;padding:6px 10px;border-radius:10px;background:var(--painel);border:1px solid var(--linha)}
-#gps.bom{color:#5fd38d}#gps.ruim{color:var(--ruim)}
-body:not(.nav) #gps{top:auto;bottom:calc(env(safe-area-inset-bottom) + 12px)}
+#cadeado p{color:var(--fraco);min-height:1.4em}
+#cadeado .bolas{display:flex;justify-content:center;gap:14px}
+#cadeado .bolas i{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--fraco);transition:background .15s,border-color .15s,transform .2s var(--mola)}
+#cadeado .bolas i.on{background:var(--amb);border-color:var(--amb);transform:scale(1.1)}
+#cadeado .tecl{display:grid;grid-template-columns:repeat(3,72px);gap:16px 24px;justify-content:center}
+#cadeado .tecl button{height:72px;font-size:28px;font-weight:400;border-radius:50%;background:rgba(20,24,30,.05)}
+#gps{position:fixed;left:12px;top:calc(env(safe-area-inset-top) + 100px);font-size:12px;font-weight:500;padding:5px 10px;border-radius:999px;display:flex;align-items:center;gap:6px}
+#gps::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+#gps[hidden]{display:none}#gps.bom{color:var(--bom)}#gps.ruim{color:var(--ruim)}
+body:not(.nav) #gps{top:auto;bottom:calc(env(safe-area-inset-bottom) + 14px)}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="topo">
   <h1>PANTERA GPS</h1>
-  <input id="busca" placeholder="Rua, lugar ou coordenada" autocomplete="off">
-  <div id="achados"></div>
+  <input id="busca" placeholder="Buscar rua ou lugar" autocomplete="off">
+  <div id="achados" class="vidro"></div>
   <div id="chips"></div>
 </div>
-<div id="manobra"></div>
-<div id="gps" hidden></div>
-<div id="lado">
-  <button id="bVolta" aria-label="Fazer a volta" hidden>⇄</button>
-  <button id="bNorte" aria-label="Girar o mapa"><svg viewBox="-12 -12 24 24" width="26" height="26"><path d="M0-10 5 0H-5Z" fill="#ff5a4d"/><path d="M0 10 5 0H-5Z" fill="#d8d5ce"/></svg></button>
-  <button id="bMais" aria-label="Aproximar">+</button>
-  <button id="bMenos" aria-label="Afastar">−</button>
-  <button id="bEu" aria-label="Minha posição">◎</button>
+<div id="manobra" class="vidro"></div>
+<div id="gps" class="vidro" hidden></div>
+<div id="lado" class="vidro">
+  <button id="bVolta" aria-label="Fazer a volta" hidden><svg viewBox="0 0 24 24"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg></button>
+  <button id="bNorte" aria-label="Girar o mapa"><svg viewBox="-12 -12 24 24" style="stroke:none"><path d="M0-9 4.2 0h-8.4Z" fill="#e5484d"/><path d="M0 9 4.2 0h-8.4Z" fill="#b9bcc2"/></svg></button>
+  <button id="bMais" aria-label="Aproximar"><svg viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg></button>
+  <button id="bMenos" aria-label="Afastar"><svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg></button>
+  <button id="bEu" aria-label="Minha posição"><svg viewBox="0 0 24 24"><path d="M20 4 4 10.5l6.5 3 3 6.5Z"/></svg></button>
 </div>
-<div id="folha"></div>
+<div id="folha" class="vidro"></div>
 <script src="cadeado.js"></script>
 <script src="dados.js"></script>
 <script src="rotas.js"></script>
@@ -124,21 +143,29 @@ function pintar() {
   $("#bVolta").hidden = !destino;
   const bn = $('#bNorte svg'); if (bn) { bn.style.transform = 'rotate(' + cam.r + 'rad)'; $('#bNorte').classList.toggle('on', modo === 'direcao'); }
   cx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-  cx.fillStyle = '#101113'; cx.fillRect(0, 0, W, H);
+  cx.fillStyle = '#f3f1ec'; cx.fillRect(0, 0, W, H);
   cx.lineCap = cx.lineJoin = 'round';
   const raio = Math.hypot(W, H) / cam.z, z = cam.z;
   const vis = T.filter(t => t.box[2] > cam.x - raio && t.box[0] < cam.x + raio && t.box[3] > cam.y - raio && t.box[1] < cam.y + raio);
-  const COR = ['#3f7d5c', '#34373c', '#4a4e55', '#686a6e', '#807565', '#2a2c30', '#4a3b2c'];
+  // ruas claras com contorno fino, como mapa de dia (ciclovia, rua, coletora, secundária, principal, serviço, terra)
+  const COR = ['#cfe6d5', '#ffffff', '#ffffff', '#fff4cc', '#ffe7a3', '#fbfaf7', '#ebe3d4'];
+  const BORDA = [null, '#dcd7ce', '#d3cdc2', '#e7d28e', '#e2bf66', '#e6e2da', null];
   const LARG = [2, 4, 6, 8, 9, 2.5, 2.5];
   const esc = Math.max(0.3, Math.min(2.4, z * 1.6));
-  for (const c of [5, 6, 0, 1, 2, 3, 4]) {
+  const ordem = [5, 6, 0, 1, 2, 3, 4];
+  const pts = new Map(vis.map(t => [t, t.g.map(naTela)]));
+  for (const passo of [0, 1]) for (const c of ordem) {
     if (z < 0.1 && (c === 5 || c === 6)) continue;
-    for (const t of vis) if (t.c === c) linha(t.g.map(naTela), t.evitar ? '#8a3a35' : COR[c], (t.evitar ? 9 : LARG[c]) * esc);
+    for (const t of vis) if (t.c === c) {
+      const larg = (t.evitar ? 8 : LARG[c]) * esc;
+      if (passo === 0) { const b = t.evitar ? '#eaa7a2' : BORDA[c]; if (b) linha(pts.get(t), b, larg + 2 * Math.max(0.6, esc * 0.7)); }
+      else linha(pts.get(t), t.evitar ? '#f7d3d0' : COR[c], larg);
+    }
   }
   if (rota) desenharRota();
   // seta de mão única
   if (z > 0.35) {
-    cx.strokeStyle = '#d8d5ce'; cx.lineWidth = 1.6;
+    cx.strokeStyle = '#a3a7ae'; cx.lineWidth = 1.3;
     const postas = [];
     for (const t of vis) {
       if (!t.mao || t.c === 5) continue;
@@ -152,7 +179,7 @@ function pintar() {
   }
   // nomes das ruas (avenidas aparecem primeiro)
   if (z > 0.1) {
-    cx.font = '600 12px Geist,system-ui'; cx.fillStyle = '#e4e1da'; cx.textAlign = 'center';
+    cx.font = '500 11px -apple-system,BlinkMacSystemFont,system-ui'; cx.fillStyle = '#5d6168'; cx.textAlign = 'center';
     const postos = [];
     for (const t of [...vis].sort((a, b) => (b.c >= 2 && b.c <= 4) - (a.c >= 2 && a.c <= 4))) {
       if (!t.nome || t.g.length < 2 || (z < 0.28 && !(t.c >= 2 && t.c <= 4))) continue;
@@ -165,45 +192,88 @@ function pintar() {
       if (ang > Math.PI / 2) ang -= Math.PI; if (ang < -Math.PI / 2) ang += Math.PI;
       const curto = t.nome.replace(/^Rua /, 'R. ').replace(/^Avenida /, 'Av. ').replace(/^Alameda /, 'Al. ');
       cx.save(); cx.translate(...m); cx.rotate(ang);
-      cx.strokeStyle = '#101113'; cx.lineWidth = 3.5; cx.strokeText(curto, 0, -6); cx.fillText(curto, 0, -6); cx.restore();
+      cx.strokeStyle = 'rgba(255,255,255,.92)'; cx.lineWidth = 3; cx.strokeText(curto, 0, -6); cx.fillText(curto, 0, -6); cx.restore();
     }
   }
-  for (const m of marcas) ponto(naTela(xy(m.p)), m.tipo === 'buraco' ? '#d6a35c' : '#ff5a4d', 6);
-  if (destino) ponto(naTela(xy(destino)), '#eceae6', 9);
-  if (origemManual && !eu) ponto(naTela(xy(origemManual)), '#5fd38d', 9);
-  cx.font = '700 13px Geist,system-ui'; cx.textAlign = 'left';
+  for (const m of marcas) ponto(naTela(xy(m.p)), m.tipo === 'buraco' ? '#d99a3d' : '#e5484d', 6);
+  if (destino) alfinete(naTela(xy(destino)));
+  if (origemManual && !eu) ponto(naTela(xy(origemManual)), '#2f9e6a', 8);
+  cx.font = '600 12px -apple-system,BlinkMacSystemFont,system-ui'; cx.textAlign = 'left';
   for (const [n, p] of lugares()) if (p) {
     const q = naTela(xy(p)); if (q[0] < -50 || q[1] < -20 || q[0] > W + 50 || q[1] > H + 20) continue;
-    ponto(q, '#ffb02e', 5); cx.strokeStyle = '#101113'; cx.lineWidth = 4; cx.strokeText(n, q[0] + 9, q[1] + 4); cx.fillStyle = '#ffb02e'; cx.fillText(n, q[0] + 9, q[1] + 4);
+    ponto(q, '#f08a00', 5); cx.strokeStyle = 'rgba(255,255,255,.95)'; cx.lineWidth = 3.5; cx.strokeText(n, q[0] + 9, q[1] + 4); cx.fillStyle = '#b86400'; cx.fillText(n, q[0] + 9, q[1] + 4);
   }
-  if (eu && precisao > 15) { const q = naTela(xy(eu)); cx.fillStyle = 'rgba(95,160,255,.15)'; cx.strokeStyle = 'rgba(95,160,255,.6)'; cx.lineWidth = 1.5; cx.beginPath(); cx.arc(...q, precisao * cam.z, 0, 7); cx.fill(); cx.stroke(); }
-  if (eu) pantera(naTela(xy(eu)), rumo * Math.PI / 180 + cam.r);
+  const aqui = visto || eu;
+  if (aqui && precisao > 15) { const q = naTela(xy(aqui)); cx.fillStyle = 'rgba(47,109,246,.10)'; cx.strokeStyle = 'rgba(47,109,246,.35)'; cx.lineWidth = 1; cx.beginPath(); cx.arc(...q, precisao * cam.z, 0, 7); cx.fill(); cx.stroke(); }
+  if (aqui) pantera(naTela(xy(aqui)), rumoVisto * Math.PI / 180 + cam.r);
 }
 function desenharRota() {
-  {
-    linha(rota.linha.map(p => naTela(xy(p))), '#000', 11);
-    for (const s of rota.partes) linha(s.g.map(p => naTela(xy(p))), s.ruim ? '#ff5a4d' : s.subida ? '#c77dff' : '#ffb02e', 7);
-  }
+  cx.save(); cx.shadowColor = 'rgba(120,60,0,.25)'; cx.shadowBlur = 6;
+  linha(rota.linha.map(p => naTela(xy(p))), '#ffffff', 11);
+  cx.restore();
+  for (const s of rota.partes) linha(s.g.map(p => naTela(xy(p))), s.ruim ? '#e5484d' : s.subida ? '#8e5cf7' : '#f08a00', 6.5);
 }
-function ponto(p, cor, r) { cx.fillStyle = cor; cx.strokeStyle = '#000'; cx.lineWidth = 3; cx.beginPath(); cx.arc(...p, r, 0, 7); cx.stroke(); cx.fill(); }
+function ponto(p, cor, r) { cx.fillStyle = cor; cx.strokeStyle = '#fff'; cx.lineWidth = 2.5; cx.beginPath(); cx.arc(...p, r, 0, 7); cx.stroke(); cx.fill(); }
+function alfinete(p) { // gota do destino
+  cx.save(); cx.translate(p[0], p[1]); cx.shadowColor = 'rgba(0,0,0,.25)'; cx.shadowBlur = 6; cx.shadowOffsetY = 2;
+  cx.beginPath(); cx.moveTo(0, 0); cx.bezierCurveTo(-4, -8, -11, -12, -11, -21); cx.arc(0, -21, 11, Math.PI, 0); cx.bezierCurveTo(11, -12, 4, -8, 0, 0);
+  cx.fillStyle = '#e5484d'; cx.fill(); cx.shadowColor = 'transparent';
+  cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(0, -21, 4, 0, 7); cx.fill(); cx.restore();
+}
 function pantera(p, ang) { // setinha com orelhas e olhos
   cx.save(); cx.translate(...p); cx.rotate(ang);
+  cx.shadowColor = 'rgba(0,0,0,.3)'; cx.shadowBlur = 8; cx.shadowOffsetY = 2;
   cx.beginPath(); cx.moveTo(0, -22); cx.lineTo(7, -9); cx.lineTo(16, -14); cx.lineTo(15, 17); cx.lineTo(0, 9); cx.lineTo(-15, 17); cx.lineTo(-16, -14); cx.lineTo(-7, -9); cx.closePath();
-  cx.fillStyle = '#0b0b0c'; cx.strokeStyle = '#ffb02e'; cx.lineWidth = 2.5; cx.fill(); cx.stroke();
+  cx.fillStyle = '#1d1f23'; cx.strokeStyle = '#ffffff'; cx.lineWidth = 2.5; cx.fill(); cx.shadowColor = 'transparent'; cx.stroke();
   cx.fillStyle = '#ffb02e';
   for (const s of [-1, 1]) { cx.beginPath(); cx.ellipse(s * 6, -2, 3.4, 1.7, s * -0.5, 0, 7); cx.fill(); }
   cx.restore();
 }
 
+// ---------- movimento suave ----------
+let voo = 0, embalo = 0;
+const parado = () => { voo++; embalo++; };
+// leva a câmera até o alvo com desaceleração (zoom em escala geométrica, giro pelo lado mais curto)
+function voar(alvo, ms = 520) {
+  const id = ++voo, de = { ...cam }, t0 = performance.now();
+  if (alvo.r != null) alvo.r = de.r + ((((alvo.r - de.r) % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI);
+  const passo = t => {
+    if (id !== voo) return;
+    const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 3);
+    if (alvo.x != null) cam.x = de.x + (alvo.x - de.x) * e;
+    if (alvo.y != null) cam.y = de.y + (alvo.y - de.y) * e;
+    if (alvo.z != null) cam.z = de.z * Math.pow(alvo.z / de.z, e);
+    if (alvo.r != null) cam.r = de.r + (alvo.r - de.r) * e;
+    desenhar(); if (k < 1) requestAnimationFrame(passo);
+  };
+  requestAnimationFrame(passo);
+}
+// ao soltar o dedo, o mapa continua deslizando e para devagar
+function embalar(vx, vy) {
+  const id = ++embalo; let t0 = performance.now();
+  const passo = t => {
+    if (id !== embalo) return;
+    const dt = Math.min(40, t - t0); t0 = t;
+    const a = noMundo(0, 0), b = noMundo(vx * dt, vy * dt); cam.x -= b[0] - a[0]; cam.y -= b[1] - a[1];
+    const f = Math.pow(0.94, dt / 16); vx *= f; vy *= f; desenhar();
+    if (Math.hypot(vx, vy) > 0.02) requestAnimationFrame(passo);
+  };
+  requestAnimationFrame(passo);
+}
+
 // ---------- gestos ----------
-const dedos = new Map(); let mexeu = 0, angAntes = null, antes = null; angAntes = null;
-cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); dedos.set(e.pointerId, [e.clientX, e.clientY]); if (dedos.size === 1) mexeu = 0; antes = null; angAntes = null; });
+const dedos = new Map(); let mexeu = 0, angAntes = null, antes = null, vel = [0, 0], tAntes = 0;
+cv.addEventListener('pointerdown', e => { parado(); cv.setPointerCapture(e.pointerId); dedos.set(e.pointerId, [e.clientX, e.clientY]); if (dedos.size === 1) { mexeu = 0; vel = [0, 0]; tAntes = e.timeStamp; } antes = null; angAntes = null; });
 cv.addEventListener('pointermove', e => {
   const v = dedos.get(e.pointerId); if (!v) return;
   const n = [e.clientX, e.clientY];
   if (dedos.size === 1) {
     mexeu += Math.hypot(n[0] - v[0], n[1] - v[1]);
-    if (mexeu > 8) { const a = noMundo(...v), b = noMundo(...n); cam.x += a[0] - b[0]; cam.y += a[1] - b[1]; seguir = false; }
+    if (mexeu > 8) {
+      const a = noMundo(...v), b = noMundo(...n); cam.x += a[0] - b[0]; cam.y += a[1] - b[1]; seguir = false;
+      const dt = Math.max(1, e.timeStamp - tAntes); vel = [vel[0] * 0.6 + 0.4 * (n[0] - v[0]) / dt, vel[1] * 0.6 + 0.4 * (n[1] - v[1]) / dt];
+    }
+    tAntes = e.timeStamp;
   }
   dedos.set(e.pointerId, n);
   if (dedos.size === 2) {
@@ -221,19 +291,21 @@ cv.addEventListener('pointermove', e => {
 const solta = e => {
   if (!dedos.delete(e.pointerId)) return; antes = null; angAntes = null;
   if (e.type === 'pointerup' && !dedos.size && mexeu <= 8 && !navegando) tocou(ll(...noMundo(e.clientX, e.clientY)));
+  else if (!dedos.size && mexeu > 8 && mexeu < 99 && e.timeStamp - tAntes < 80 && Math.hypot(...vel) > 0.15) embalar(...vel);
 };
 cv.addEventListener('pointerup', solta); cv.addEventListener('pointercancel', solta);
 cv.addEventListener('wheel', e => { e.preventDefault(); zoom(e.deltaY < 0 ? 1.2 : 1 / 1.2); }, { passive: false });
-const zoom = f => { cam.z = Math.max(0.03, Math.min(4, cam.z * f)); desenhar(); };
+const limZ = z => Math.max(0.03, Math.min(4, z));
+const zoom = f => { cam.z = limZ(cam.z * f); desenhar(); };
 $('#bVolta').onclick = () => { if (navegando) parar(); inverter(); };
 $('#bNorte').onclick = () => {
   if (modo === 'norte' && navegando) modo = 'direcao';
-  else { modo = 'norte'; cam.r = 0; }
-  if (modo === 'direcao' && eu) { seguir = true; cam.r = -rumo * Math.PI / 180; [cam.x, cam.y] = xy(eu); }
+  else { modo = 'norte'; voar({ r: 0 }, 420); }
+  if (modo === 'direcao' && eu) { seguir = true; const [x, y] = xy(eu); voar({ x, y, r: -rumo * Math.PI / 180 }, 420); }
   gravar('modo', modo === 'livre' ? 'norte' : modo); desenhar();
 };
-$('#bMais').onclick = () => zoom(1.5); $('#bMenos').onclick = () => zoom(1 / 1.5);
-$('#bEu').onclick = () => { ligarGps(); if (eu) { [cam.x, cam.y] = xy(eu); cam.z = Math.max(cam.z, 0.7); seguir = true; desenhar(); } };
+$('#bMais').onclick = () => voar({ z: limZ(cam.z * 1.7) }, 320); $('#bMenos').onclick = () => voar({ z: limZ(cam.z / 1.7) }, 320);
+$('#bEu').onclick = () => { ligarGps(); if (eu) { const [x, y] = xy(eu); seguir = true; voar({ x, y, z: Math.max(cam.z, 0.7) }); } };
 
 // ---------- folha ----------
 const el = (tag, texto, cls) => { const e = document.createElement(tag); if (texto) e.textContent = texto; if (cls) e.className = cls; return e; };
@@ -241,10 +313,12 @@ let mini = false;
 function folha(...filhos) {
   const f = $('#folha');
   if (!filhos.length) { f.replaceChildren(); return; }
-  const alca = el('button', mini ? '▴' : '▾', 'alca'); alca.setAttribute('aria-label', mini ? 'Mostrar' : 'Minimizar');
-  alca.onclick = () => { mini = !mini; f.classList.toggle('mini', mini); alca.textContent = mini ? '▴' : '▾'; };
+  const novo = !f.childElementCount;
+  const alca = el('button', '', 'alca'); alca.setAttribute('aria-label', mini ? 'Mostrar' : 'Minimizar');
+  alca.onclick = () => { mini = !mini; f.classList.toggle('mini', mini); alca.setAttribute('aria-label', mini ? 'Mostrar' : 'Minimizar'); };
   f.classList.toggle('mini', mini);
   f.replaceChildren(alca, ...filhos);
+  if (novo) { f.classList.remove('entra'); void f.offsetWidth; f.classList.add('entra'); }
 }
 function acoes(...lista) {
   const d = el('div', '', 'acoes');
@@ -288,7 +362,7 @@ const RUAS = MAPA.nomes.filter(Boolean);
 const LUGARES = (MAPA.lugares || []).map(([n, la, lo, rua]) => [n, [la / 1e5, lo / 1e5], rua]);
 function abrirAchado(n, p) {
   $('#busca').value = ''; $('#achados').replaceChildren(); $('#busca').blur();
-  [cam.x, cam.y] = xy(p); cam.z = 0.9; seguir = false; destino = p; rota = null;
+  const [x, y] = xy(p); voar({ x, y, z: 0.9 }, 650); seguir = false; destino = p; rota = null;
   folha(el('b', n), el('p', 'Confira o ponto no mapa.'), acoes(['Ir até aqui', () => irPara(n, p), 'pri'], ['Salvar lugar', () => salvar(p)], ['Fechar', limpar]));
   desenhar();
 }
@@ -377,11 +451,9 @@ function abrirGoogle() {
 }
 function enquadrar() {
   const p = rota.linha.map(xy), xs = p.map(a => a[0]), ys = p.map(a => a[1]);
-  cam.r = 0; seguir = false;
-  cam.z = Math.min(1.5, (W - 80) / (Math.max(...xs) - Math.min(...xs) + 1), (H * 0.36) / (Math.max(...ys) - Math.min(...ys) + 1));
-  cam.x = (Math.max(...xs) + Math.min(...xs)) / 2;
-  cam.y = (Math.max(...ys) + Math.min(...ys)) / 2 + (H * 0.1) / cam.z;
-  desenhar();
+  seguir = false;
+  const z = Math.min(1.5, (W - 80) / (Math.max(...xs) - Math.min(...xs) + 1), (H * 0.36) / (Math.max(...ys) - Math.min(...ys) + 1));
+  voar({ r: 0, z, x: (Math.max(...xs) + Math.min(...xs)) / 2, y: (Math.max(...ys) + Math.min(...ys)) / 2 + (H * 0.1) / z }, 750);
 }
 function limpar() { volta = false; rota = destino = null; parar(); folha(); desenhar(); }
 
@@ -427,7 +499,7 @@ function marcar2(tipo) {
   desenhar();
 }
 async function comecar() {
-  navegando = true; seguir = true; fora = 0; if (modo === 'livre') modo = 'norte'; document.body.classList.add('nav'); cam.z = 1.4;
+  parado(); navegando = true; seguir = true; fora = 0; if (modo === 'livre') modo = 'norte'; document.body.classList.add('nav'); cam.z = 1.4;
   try { trava = await navigator.wakeLock.request('screen'); } catch {}
   if (new URLSearchParams(location.search).has('sim')) simular(); else ligarGps();
   const p = eu || rota.linha[0];
@@ -449,12 +521,24 @@ function simular() {
 
 // ---------- GPS ----------
 let vigia = null, ultima = null, precisao = 0, modo = ler('modo', 'norte');
+// a pantera desliza de um ponto do GPS ao outro (e a câmera vai junto), em vez de pular
+let visto = null, rumoVisto = 0;
 function posicao(p, direcao) {
+  const de = visto || p, rDe = rumoVisto;
   eu = p;
   if (direcao != null && !Number.isNaN(direcao)) rumo = direcao;
-  if (seguir) { [cam.x, cam.y] = xy(p); if (modo === 'direcao') cam.r = -rumo * Math.PI / 180; }
-  andou(p); desenhar();
+  const dr = ((rumo - rDe + 540) % 360) - 180, t0 = performance.now(), ms = navegando ? 900 : 350, id = ++deslize;
+  const passo = t => {
+    if (id !== deslize) return;
+    const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 2);
+    visto = [de[0] + (p[0] - de[0]) * e, de[1] + (p[1] - de[1]) * e]; rumoVisto = rDe + dr * e;
+    if (seguir) { [cam.x, cam.y] = xy(visto); if (modo === 'direcao') cam.r = -rumoVisto * Math.PI / 180; }
+    desenhar(); if (k < 1) requestAnimationFrame(passo);
+  };
+  requestAnimationFrame(passo);
+  andou(p);
 }
+let deslize = 0;
 function ligarGps() {
   if (vigia != null || !navigator.geolocation) return;
   vigia = navigator.geolocation.watchPosition(g => {
@@ -471,7 +555,7 @@ function ligarGps() {
     posicao(p, d);
     if (destino && !navegando && precisao <= 60 && (!rota || Rotas.metros(p, rota.linha[0]) > 80)) calcular();
     else if (primeira && destino && !rota) calcular();
-    else if (primeira && !destino) { [cam.x, cam.y] = xy(p); cam.z = 0.6; }
+    else if (primeira && !destino) { const [x, y] = xy(p); voar({ x, y, z: 0.6 }, 800); }
   }, erro => { desligarGps(); folha(el('b', 'Sem GPS aqui'), el('p', erro.code === 1 ? 'A localização foi negada ou está bloqueada. Toque no mapa e escolha "Sair daqui".' : 'Não consegui sua posição agora.'), acoes(['Fechar', () => folha()])); }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 });
 }
 function desligarGps() { if (vigia != null) navigator.geolocation.clearWatch(vigia); vigia = null; }
@@ -493,10 +577,10 @@ if (self.CADEADO) {
     const d = el('div'); d.id = 'cadeado';
     let pin = '';
     const bolas = el('div', '', 'bolas'), erro = el('p'), tecl = el('div', '', 'tecl');
-    const mostrar = () => { bolas.textContent = '●'.repeat(pin.length) + '○'.repeat(Math.max(0, 4 - pin.length)); };
+    const mostrar = () => { bolas.replaceChildren(...[0, 1, 2, 3].map(i => el('i', '', i < pin.length ? 'on' : ''))); };
     const tentar = async () => {
       erro.textContent = 'Abrindo…';
-      try { FIXOS = await abrirCadeado(pin); gravar('cofre', { iv: self.CADEADO.iv, lugares: FIXOS }); chips(); d.remove(); }
+      try { FIXOS = await abrirCadeado(pin); gravar('cofre', { iv: self.CADEADO.iv, lugares: FIXOS }); chips(); d.classList.add('sai'); setTimeout(() => d.remove(), 360); }
       catch { erro.textContent = 'Senha errada.'; pin = ''; mostrar(); }
     };
     for (const k of ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫']) {
