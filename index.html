@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#101113">
+<title>Pantera GPS</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone.svg">
+<link rel="apple-touch-icon" href="icone.png">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&family=Michroma&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#101113;--painel:#1a1c1f;--linha:#2c2f34;--tx:#eceae6;--fraco:#97948e;--amb:#ffb02e;--ruim:#ff5a4d;color-scheme:dark}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font:15px/1.4 Geist,system-ui,sans-serif}
+canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
+button,input{font:inherit;color:inherit;background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:10px 14px;min-height:44px}
+button{cursor:pointer;font-weight:600}
+button.pri{background:var(--amb);border-color:var(--amb);color:#1a1200}
+button.on{border-color:var(--amb);color:var(--amb)}
+#topo{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 10px) 12px 0;display:flex;flex-direction:column;gap:8px}
+h1{font:12px Michroma,sans-serif;letter-spacing:.18em;color:var(--amb)}
+#busca{width:100%;min-width:0;user-select:text}
+#achados{max-height:46vh;overflow:auto}
+#achados small{display:block;font-weight:400;color:var(--fraco)}
+#achados{display:flex;flex-direction:column;gap:4px}
+#achados button{text-align:left}
+#chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+#chips button{white-space:nowrap;flex:none}
+#chips button.falta{color:var(--fraco);border-style:dashed}
+#lado{position:fixed;right:12px;top:45%;display:flex;flex-direction:column;gap:8px}
+#lado button{width:48px;height:48px;padding:0;font-size:20px}
+#folha{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 8px);background:var(--painel);border:1px solid var(--linha);border-radius:18px;padding:14px;max-height:48vh;overflow:auto}
+#folha:empty{display:none}
+.num{display:flex;gap:18px;margin:4px 0 8px}.num b{display:block;font:20px Michroma,sans-serif}.num span{color:var(--fraco);font-size:12px}
+.aviso{border-left:3px solid var(--ruim);padding-left:8px;margin:6px 0;font-size:14px}
+.ok{border-left-color:#5fd38d}
+.acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.acoes button{flex:1 1 30%}
+#manobra{position:fixed;left:8px;right:8px;top:calc(env(safe-area-inset-top) + 8px);background:var(--painel);border:2px solid var(--amb);border-radius:18px;padding:14px;font-size:20px;font-weight:700;display:none}
+body.nav #topo{display:none}body.nav #manobra{display:block}
+#cadeado{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;justify-content:center;gap:12px;padding:32px}
+#cadeado h1,#cadeado p{text-align:center}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="topo">
+  <h1>PANTERA GPS</h1>
+  <input id="busca" placeholder="Rua, lugar ou coordenada" autocomplete="off">
+  <div id="achados"></div>
+  <div id="chips"></div>
+</div>
+<div id="manobra"></div>
+<div id="lado">
+  <button id="bMais" aria-label="Aproximar">+</button>
+  <button id="bMenos" aria-label="Afastar">−</button>
+  <button id="bEu" aria-label="Minha posição">◎</button>
+</div>
+<div id="folha"></div>
+<script src="cadeado.js"></script>
+<script src="dados.js"></script>
+<script src="rotas.js"></script>
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const G = Rotas.carregar(MAPA);
+const ler = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+const gravar = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+
+// Lugares públicos já vêm marcados; os particulares ficam só neste aparelho.
+// os destinos não ficam neste arquivo: vêm cifrados (site) ou injetados na página privada
+let FIXOS = self.FIXOS || [['Casa', null], ['Casa da sogra', null]];
+let meus = ler('lugares', {}), marcas = ler('marcas', []), garupa = ler('garupa', false);
+const lugares = () => {
+  const m = new Map(FIXOS);
+  for (const [n, p] of Object.entries(meus)) m.set(n, p);
+  return [...m];
+};
+
+let eu = null, rumo = 0, origemManual = null, destino = null, nomeDestino = '', rota = null, navegando = false, seguir = false, salvarComo = null;
+
+// ---------- mapa ----------
+const cv = $('#c'), cx = cv.getContext('2d');
+const LAT0 = -22.33, LON0 = -49.06, KY = 111320, KX = KY * Math.cos(LAT0 * Math.PI / 180);
+const xy = p => [(p[1] - LON0) * KX, -(p[0] - LAT0) * KY];
+const ll = (x, y) => [LAT0 - y / KY, LON0 + x / KX];
+const T = G.trechos.map(t => {
+  const g = t.g.map(xy), xs = g.map(p => p[0]), ys = g.map(p => p[1]);
+  return { g, c: t.c, mao: t.mao, evitar: t.evitar, nome: t.nome, box: [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)] };
+});
+const cam = { x: 0, y: 0, z: 0.12, r: 0 };
+let W, H, pedido = false;
+const desenhar = () => { if (!pedido) { pedido = true; requestAnimationFrame(pintar); } };
+function ajustar() { W = innerWidth; H = innerHeight; cv.width = W * devicePixelRatio; cv.height = H * devicePixelRatio; desenhar(); }
+const centroY = () => navegando && seguir ? H * 0.68 : H / 2;
+function naTela(w) {
+  const dx = (w[0] - cam.x) * cam.z, dy = (w[1] - cam.y) * cam.z, c = Math.cos(cam.r), s = Math.sin(cam.r);
+  return [W / 2 + dx * c - dy * s, centroY() + dx * s + dy * c];
+}
+function noMundo(sx, sy) {
+  const dx = sx - W / 2, dy = sy - centroY(), c = Math.cos(cam.r), s = Math.sin(cam.r);
+  return [cam.x + (dx * c + dy * s) / cam.z, cam.y + (-dx * s + dy * c) / cam.z];
+}
+function linha(pts, cor, larg) {
+  cx.strokeStyle = cor; cx.lineWidth = larg; cx.beginPath();
+  pts.forEach((p, i) => i ? cx.lineTo(...p) : cx.moveTo(...p)); cx.stroke();
+}
+function pintar() {
+  pedido = false;
+  cx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  cx.fillStyle = '#101113'; cx.fillRect(0, 0, W, H);
+  cx.lineCap = cx.lineJoin = 'round';
+  const raio = Math.hypot(W, H) / cam.z, z = cam.z;
+  const vis = T.filter(t => t.box[2] > cam.x - raio && t.box[0] < cam.x + raio && t.box[3] > cam.y - raio && t.box[1] < cam.y + raio);
+  const COR = ['#3f7d5c', '#34373c', '#4a4e55', '#686a6e', '#807565', '#2a2c30', '#4a3b2c'];
+  const LARG = [2, 4, 6, 8, 9, 2.5, 2.5];
+  const esc = Math.max(0.3, Math.min(2.4, z * 1.6));
+  for (const c of [5, 6, 0, 1, 2, 3, 4]) {
+    if (z < 0.1 && (c === 5 || c === 6)) continue;
+    for (const t of vis) if (t.c === c) linha(t.g.map(naTela), t.evitar ? '#8a3a35' : COR[c], (t.evitar ? 9 : LARG[c]) * esc);
+  }
+  if (rota) desenharRota();
+  // seta de mão única
+  if (z > 0.35) {
+    cx.strokeStyle = '#d8d5ce'; cx.lineWidth = 1.6;
+    const postas = [];
+    for (const t of vis) {
+      if (!t.mao || t.c === 5) continue;
+      const i = t.g.length >> 1, a = naTela(t.g[i - 1] || t.g[0]), b = naTela(t.g[i] || t.g[1]);
+      const m = [a[0] + (b[0] - a[0]) * 0.3, a[1] + (b[1] - a[1]) * 0.3];
+      if (m[0] < 0 || m[1] < 0 || m[0] > W || m[1] > H || postas.some(o => Math.hypot(o[0] - m[0], o[1] - m[1]) < 55)) continue;
+      postas.push(m);
+      cx.save(); cx.translate(...m); cx.rotate(Math.atan2(b[1] - a[1], b[0] - a[0]) + (t.mao < 0 ? Math.PI : 0));
+      cx.beginPath(); cx.moveTo(-7, 0); cx.lineTo(6, 0); cx.moveTo(1, -4); cx.lineTo(6, 0); cx.lineTo(1, 4); cx.stroke(); cx.restore();
+    }
+  }
+  // nomes das ruas (avenidas aparecem primeiro)
+  if (z > 0.1) {
+    cx.font = '600 12px Geist,system-ui'; cx.fillStyle = '#e4e1da'; cx.textAlign = 'center';
+    const postos = [];
+    for (const t of [...vis].sort((a, b) => (b.c >= 2 && b.c <= 4) - (a.c >= 2 && a.c <= 4))) {
+      if (!t.nome || t.g.length < 2 || (z < 0.28 && !(t.c >= 2 && t.c <= 4))) continue;
+      const a = naTela(t.g[0]), b = naTela(t.g[t.g.length - 1]);
+      if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 28) continue;
+      const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+      if (m[0] < 0 || m[1] < 0 || m[0] > W || m[1] > H || postos.some(p => Math.hypot(p[0] - m[0], p[1] - m[1]) < (p[2] === t.nome ? 240 : 48))) continue;
+      postos.push([...m, t.nome]);
+      let ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+      if (ang > Math.PI / 2) ang -= Math.PI; if (ang < -Math.PI / 2) ang += Math.PI;
+      const curto = t.nome.replace(/^Rua /, 'R. ').replace(/^Avenida /, 'Av. ').replace(/^Alameda /, 'Al. ');
+      cx.save(); cx.translate(...m); cx.rotate(ang);
+      cx.strokeStyle = '#101113'; cx.lineWidth = 3.5; cx.strokeText(curto, 0, -6); cx.fillText(curto, 0, -6); cx.restore();
+    }
+  }
+  for (const m of marcas) ponto(naTela(xy(m.p)), m.tipo === 'buraco' ? '#d6a35c' : '#ff5a4d', 6);
+  if (destino) ponto(naTela(xy(destino)), '#eceae6', 9);
+  if (origemManual && !eu) ponto(naTela(xy(origemManual)), '#5fd38d', 9);
+  if (eu) pantera(naTela(xy(eu)), rumo * Math.PI / 180 + cam.r);
+}
+function desenharRota() {
+  {
+    linha(rota.linha.map(p => naTela(xy(p))), '#000', 11);
+    for (const s of rota.partes) linha(s.g.map(p => naTela(xy(p))), s.ruim ? '#ff5a4d' : s.subida ? '#c77dff' : '#ffb02e', 7);
+  }
+}
+function ponto(p, cor, r) { cx.fillStyle = cor; cx.strokeStyle = '#000'; cx.lineWidth = 3; cx.beginPath(); cx.arc(...p, r, 0, 7); cx.stroke(); cx.fill(); }
+function pantera(p, ang) { // setinha com orelhas e olhos
+  cx.save(); cx.translate(...p); cx.rotate(ang);
+  cx.beginPath(); cx.moveTo(0, -22); cx.lineTo(7, -9); cx.lineTo(16, -14); cx.lineTo(15, 17); cx.lineTo(0, 9); cx.lineTo(-15, 17); cx.lineTo(-16, -14); cx.lineTo(-7, -9); cx.closePath();
+  cx.fillStyle = '#0b0b0c'; cx.strokeStyle = '#ffb02e'; cx.lineWidth = 2.5; cx.fill(); cx.stroke();
+  cx.fillStyle = '#ffb02e';
+  for (const s of [-1, 1]) { cx.beginPath(); cx.ellipse(s * 6, -2, 3.4, 1.7, s * -0.5, 0, 7); cx.fill(); }
+  cx.restore();
+}
+
+// ---------- gestos ----------
+const dedos = new Map(); let mexeu = 0, antes = null;
+cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); dedos.set(e.pointerId, [e.clientX, e.clientY]); if (dedos.size === 1) mexeu = 0; antes = null; });
+cv.addEventListener('pointermove', e => {
+  const v = dedos.get(e.pointerId); if (!v) return;
+  const n = [e.clientX, e.clientY];
+  if (dedos.size === 1) {
+    mexeu += Math.hypot(n[0] - v[0], n[1] - v[1]);
+    if (mexeu > 8) { const a = noMundo(...v), b = noMundo(...n); cam.x += a[0] - b[0]; cam.y += a[1] - b[1]; seguir = false; }
+  }
+  dedos.set(e.pointerId, n);
+  if (dedos.size === 2) {
+    const [a, b] = [...dedos.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+    if (antes) zoom(d / antes); antes = d; mexeu = 99;
+  }
+  desenhar();
+});
+const solta = e => {
+  if (!dedos.delete(e.pointerId)) return; antes = null;
+  if (e.type === 'pointerup' && !dedos.size && mexeu <= 8 && !navegando) tocou(ll(...noMundo(e.clientX, e.clientY)));
+};
+cv.addEventListener('pointerup', solta); cv.addEventListener('pointercancel', solta);
+cv.addEventListener('wheel', e => { e.preventDefault(); zoom(e.deltaY < 0 ? 1.2 : 1 / 1.2); }, { passive: false });
+const zoom = f => { cam.z = Math.max(0.03, Math.min(4, cam.z * f)); desenhar(); };
+$('#bMais').onclick = () => zoom(1.5); $('#bMenos').onclick = () => zoom(1 / 1.5);
+$('#bEu').onclick = () => { ligarGps(); if (eu) { [cam.x, cam.y] = xy(eu); cam.z = Math.max(cam.z, 0.7); seguir = true; desenhar(); } };
+
+// ---------- folha ----------
+const el = (tag, texto, cls) => { const e = document.createElement(tag); if (texto) e.textContent = texto; if (cls) e.className = cls; return e; };
+function folha(...filhos) { $('#folha').replaceChildren(...filhos); }
+function acoes(...lista) {
+  const d = el('div', '', 'acoes');
+  for (const [t, f, cls] of lista) { const b = el('button', t, cls); b.onclick = f; d.append(b); }
+  return d;
+}
+const botaoGarupa = () => [garupa ? 'Com garupa' : 'Sozinho', () => { garupa = !garupa; gravar('garupa', garupa); calcular(); }, garupa ? 'on' : ''];
+
+function tocou(p) {
+  if (salvarComo) { meus[salvarComo] = p; gravar('lugares', meus); const n = salvarComo; salvarComo = null; chips(); irPara(n, p); return; }
+  folha(el('b', 'Ponto no mapa'), acoes(
+    ['Ir até aqui', () => irPara('Ponto no mapa', p), 'pri'],
+    ['Sair daqui', () => { origemManual = p; eu = null; desligarGps(); destino ? calcular() : (folha(), desenhar()); }],
+    ['Salvar lugar', () => salvar(p)],
+    ['Buraco', () => marcar('buraco', p)], ['Interditado', () => marcar('interditado', p)],
+    ['Apagar marca', () => { marcas = marcas.filter(m => Rotas.metros(m.p, p) > 40); gravar('marcas', marcas); destino ? calcular() : folha(); desenhar(); }],
+    ['Fechar', () => folha()]));
+}
+function salvar(p) { // sem prompt(): a página privada bloqueia
+  const i = el('input'); i.placeholder = 'Nome do lugar'; i.style.width = '100%';
+  folha(el('b', 'Salvar lugar'), i, acoes(['Salvar', () => { const n = i.value.trim(); if (n) { meus[n] = p; gravar('lugares', meus); chips(); folha(); } }, 'pri'], ['Cancelar', () => folha()]));
+  i.focus();
+}
+function marcar(tipo, p) { marcas.push({ tipo, p }); gravar('marcas', marcas); destino ? calcular() : folha(); desenhar(); }
+
+function chips() {
+  $('#chips').replaceChildren(...lugares().map(([n, p]) => {
+    const b = el('button', p ? n : '＋ ' + n, p ? '' : 'falta');
+    b.onclick = () => {
+      if (p) return irPara(n, p);
+      salvarComo = n;
+      folha(el('b', 'Onde fica "' + n + '"?'), el('p', 'Toque no mapa em cima do lugar. Fica salvo só neste celular.'),
+        acoes(['Usar minha posição', () => eu ? tocou(eu) : ligarGps()], ['Cancelar', () => { salvarComo = null; folha(); }]));
+    };
+    return b;
+  }));
+}
+
+const sem = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const RUAS = MAPA.nomes.filter(Boolean);
+const LUGARES = (MAPA.lugares || []).map(([n, la, lo, rua]) => [n, [la / 1e5, lo / 1e5], rua]);
+function abrirAchado(n, p) {
+  $('#busca').value = ''; $('#achados').replaceChildren(); $('#busca').blur();
+  [cam.x, cam.y] = xy(p); cam.z = 0.9; seguir = false; destino = p; rota = null;
+  folha(el('b', n), el('p', 'Confira o ponto no mapa.'), acoes(['Ir até aqui', () => irPara(n, p), 'pri'], ['Salvar lugar', () => salvar(p)], ['Fechar', limpar]));
+  desenhar();
+}
+$('#busca').oninput = e => {
+  const bruto = e.target.value.trim(), q = sem(bruto);
+  const co = bruto.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || bruto.match(/(-2[23]\.\d{3,})[^\d-]+(-4[89]\.\d{3,})/);
+  let achou = [];
+  if (co) achou = [['Ponto colado', [+co[1], +co[2]], 'tocar para abrir']];
+  else if (q.length >= 3) {
+    const palavras = q.split(/\s+/), bate = n => palavras.every(w => sem(n).includes(w));
+    achou = [
+      ...lugares().filter(([n, p]) => p && bate(n)).map(([n, p]) => [n, p, 'meus lugares']),
+      ...LUGARES.filter(([n]) => bate(n)).slice(0, 8).map(([n, p, r]) => [n, p, r || 'lugar']),
+      ...RUAS.filter(bate).slice(0, 6).map(n => { const g = G.trechos.filter(t => t.nome === n).flatMap(t => t.g); return [n, g[g.length >> 1], 'rua']; })];
+    if (!achou.length) achou = [['Não achei "' + bruto + '"', null, 'No Google Maps, segure em cima do lugar, copie a coordenada e cole aqui']];
+  }
+  $('#achados').replaceChildren(...achou.slice(0, 10).map(([n, p, extra]) => {
+    const b = el('button', n); b.append(el('small', extra));
+    b.onclick = () => p && abrirAchado(n, p);
+    return b;
+  }));
+};
+
+// ---------- rota ----------
+function irPara(nome, p) { destino = p; nomeDestino = nome; calcular(); }
+const km = m => m < 950 ? Math.round(m / 10) * 10 + ' m' : (m / 1000).toFixed(1).replace('.', ',') + ' km';
+function calcular(silencioso) {
+  const de = eu || origemManual;
+  if (!destino) return;
+  if (!de) { ligarGps(); folha(el('b', 'De onde você sai?'), el('p', 'Libere a localização ou toque no mapa e escolha "Sair daqui".'), acoes(['Fechar', () => folha()])); desenhar(); return; }
+  const h = new Date().getHours() + new Date().getMinutes() / 60;
+  const pico = (h >= 7 && h < 8.5) || (h >= 11.5 && h < 13.5) || (h >= 17 && h < 19);
+  rota = Rotas.rota(G, de, destino, { garupa, pico, marcas });
+  if (!rota) { folha(el('b', 'Não achei caminho até ' + nomeDestino), acoes(['Fechar', limpar])); return; }
+  preparar();
+  if (silencioso) return desenhar();
+  const num = el('div', '', 'num');
+  for (const [v, r] of [[km(rota.m), 'distância'], [rota.min + ' min', 'a 25 km/h'], ['+' + rota.ganho + ' m', 'de subida']]) {
+    const d = el('div'); d.append(el('b', v), el('span', r)); num.append(d);
+  }
+  const avisos = [];
+  const aviso = (t, ok) => avisos.push(el('div', t, ok ? 'aviso ok' : 'aviso'));
+  const ev = Object.entries(rota.evitadas), rp = Object.entries(rota.rapidas);
+  for (const [n, m] of ev) aviso(`Passa ${km(m)} pela ${n}`);
+  if (rp.length) aviso(`Vias principais ou acima de 40: ${rp.map(([n, m]) => n + ' (' + km(m) + ')').join(', ')}`);
+  if (!ev.length && !rp.length) aviso('Sem avenidas da sua lista no caminho', true);
+  for (const s of rota.subidas.slice(0, 3)) aviso(`Subida de ~${s.grau}% na ${s.rua} (${km(s.m)})` + (garupa ? ': talvez precise descer e empurrar' : ''));
+  if (rota.subidas.length > 3) aviso(`Mais ${rota.subidas.length - 3} trechos de subida (roxo no mapa)`);
+  if (rota.cargas > 0.45) aviso(rota.cargas > 1 ? 'Não cabe em uma carga' : 'Ida e volta pode não caber em uma carga: confira a bateria');
+  if (pico) aviso('Horário de pico: priorizei ruas mais calmas', true);
+  folha(el('b', nomeDestino), num, ...avisos, acoes(['Começar', comecar, 'pri'], botaoGarupa(), ['Fechar', limpar]));
+  enquadrar();
+}
+function enquadrar() {
+  const p = rota.linha.map(xy), xs = p.map(a => a[0]), ys = p.map(a => a[1]);
+  cam.r = 0; seguir = false;
+  cam.z = Math.min(1.5, (W - 80) / (Math.max(...xs) - Math.min(...xs) + 1), (H * 0.36) / (Math.max(...ys) - Math.min(...ys) + 1));
+  cam.x = (Math.max(...xs) + Math.min(...xs)) / 2;
+  cam.y = (Math.max(...ys) + Math.min(...ys)) / 2 + (H * 0.1) / cam.z;
+  desenhar();
+}
+function limpar() { rota = destino = null; parar(); folha(); desenhar(); }
+
+// ---------- navegação ----------
+let manobras = [], acum = [], trava = null, fora = 0, simulando = null;
+const azim = (a, b) => (Math.atan2((b[1] - a[1]) * KX, (b[0] - a[0]) * KY) * 180 / Math.PI + 360) % 360;
+function preparar() {
+  const l = rota.linha; acum = [0];
+  for (let i = 1; i < l.length; i++) acum[i] = acum[i - 1] + Rotas.metros(l[i - 1], l[i]);
+  manobras = []; let k = 0;
+  const nomes = rota.partes.map(s => G.trechos.find(t => t.g.length === s.g.length && ((t.g[0] === s.g[0]) || (t.g.at(-1) === s.g[0])))?.nome || '');
+  for (let i = 0; i < rota.partes.length - 1; i++) {
+    k += rota.partes[i].g.length - 1;
+    if (!l[k - 1] || !l[k + 1]) continue;
+    const g = ((azim(l[k], l[k + 1]) - azim(l[k - 1], l[k]) + 540) % 360) - 180;
+    const mudouRua = nomes[i + 1] && nomes[i] !== nomes[i + 1];
+    if (Math.abs(g) < 35) continue;
+    const lado = g > 0 ? 'direita' : 'esquerda';
+    manobras.push({ s: acum[k], texto: `${g > 0 ? '↱' : '↰'} ${Math.abs(g) > 140 ? 'Retorne pela ' : 'Vire à '}${lado}${mudouRua ? ' na ' + nomes[i + 1] : ''}` });
+  }
+  manobras.push({ s: acum.at(-1), texto: '🏁 Chegada: ' + nomeDestino });
+}
+function andou(p) {
+  if (!navegando || !rota) return;
+  let melhor = 1e9, onde = 0;
+  for (let i = 1; i < rota.linha.length; i++) {
+    const d = Rotas.distSeg(p, rota.linha[i - 1], rota.linha[i]);
+    if (d < melhor) { melhor = d; onde = acum[i - 1] + Math.min(Rotas.metros(rota.linha[i - 1], p), acum[i] - acum[i - 1]); }
+  }
+  fora = melhor > 40 ? fora + 1 : 0;
+  if (fora >= 3) { fora = 0; calcular(true); return; }
+  const falta = acum.at(-1) - onde;
+  if (falta < 25) { $('#manobra').textContent = '🏁 Você chegou: ' + nomeDestino; return; }
+  const m = manobras.find(m => m.s > onde + 5) || manobras.at(-1);
+  $('#manobra').textContent = `Em ${km(m.s - onde)}: ${m.texto}`;
+  folha(el('b', `${km(falta)} · ${Math.max(1, Math.round(falta / 1000 / 25 * 60))} min até ${nomeDestino}`),
+    acoes(['Parar', () => { parar(); calcular(); }], ['Buraco aqui', () => marcar2('buraco')], ['Interditado', () => marcar2('interditado')]));
+}
+function marcar2(tipo) {
+  const a = (rumo * Math.PI) / 180, d = tipo === 'interditado' ? 25 : 0;
+  marcas.push({ tipo, p: [eu[0] + d * Math.cos(a) / KY, eu[1] + d * Math.sin(a) / KX] }); gravar('marcas', marcas);
+  if (tipo === 'interditado') calcular(true);
+  desenhar();
+}
+async function comecar() {
+  navegando = true; seguir = true; fora = 0; document.body.classList.add('nav'); cam.z = 1.4;
+  try { trava = await navigator.wakeLock.request('screen'); } catch {}
+  if (new URLSearchParams(location.search).has('sim')) simular(); else ligarGps();
+  const p = eu || rota.linha[0];
+  posicao(p, azim(rota.linha[0], rota.linha[1] || rota.linha[0]));
+}
+function parar() {
+  navegando = false; cam.r = 0; document.body.classList.remove('nav');
+  trava?.release().catch(() => {}); trava = null; clearInterval(simulando);
+}
+document.addEventListener('visibilitychange', async () => { if (navegando && document.visibilityState === 'visible') try { trava = await navigator.wakeLock.request('screen'); } catch {} });
+function simular() {
+  let s = 0; clearInterval(simulando);
+  simulando = setInterval(() => {
+    s += 12; let i = acum.findIndex(a => a >= s); if (i < 1) return clearInterval(simulando);
+    const a = rota.linha[i - 1], b = rota.linha[i], f = (s - acum[i - 1]) / (acum[i] - acum[i - 1] || 1);
+    posicao([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f], azim(a, b));
+  }, 400);
+}
+
+// ---------- GPS ----------
+let vigia = null, ultima = null;
+function posicao(p, direcao) {
+  eu = p;
+  if (direcao != null && !Number.isNaN(direcao)) rumo = direcao;
+  if (seguir) { [cam.x, cam.y] = xy(p); cam.r = navegando ? -rumo * Math.PI / 180 : 0; }
+  andou(p); desenhar();
+}
+function ligarGps() {
+  if (vigia != null || !navigator.geolocation) return;
+  vigia = navigator.geolocation.watchPosition(g => {
+    const p = [g.coords.latitude, g.coords.longitude], primeira = !eu;
+    let d = g.coords.speed > 1 ? g.coords.heading : null;
+    if (d == null && ultima && Rotas.metros(ultima, p) > 8) d = azim(ultima, p);
+    if (!ultima || Rotas.metros(ultima, p) > 8) ultima = p;
+    posicao(p, d);
+    if (primeira && destino && !rota) calcular();
+    else if (primeira && !destino) { [cam.x, cam.y] = xy(p); cam.z = 0.6; }
+  }, erro => { desligarGps(); folha(el('b', 'Sem GPS aqui'), el('p', erro.code === 1 ? 'A localização foi negada ou está bloqueada. Toque no mapa e escolha "Sair daqui".' : 'Não consegui sua posição agora.'), acoes(['Fechar', () => folha()])); }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 });
+}
+function desligarGps() { if (vigia != null) navigator.geolocation.clearWatch(vigia); vigia = null; }
+
+addEventListener('resize', ajustar);
+chips(); ajustar();
+// ---------- cadeado (só na versão do site) ----------
+async function abrirCadeado(senha) {
+  const C = self.CADEADO, b = t => Uint8Array.from(atob(t), c => c.charCodeAt(0));
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(senha), 'PBKDF2', false, ['deriveKey']);
+  const k = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b(C.sal), iterations: C.n, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+  return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b(C.iv) }, k, b(C.dados))));
+}
+if (self.CADEADO) {
+  const salvo = ler('cofre', null);
+  if (salvo && salvo.iv === self.CADEADO.iv) { FIXOS = salvo.lugares; chips(); }
+  else {
+    const d = el('div'); d.id = 'cadeado';
+    const i = el('input'); i.type = 'password'; i.placeholder = 'Senha'; i.autocomplete = 'current-password'; i.autocapitalize = 'none';
+    const b = el('button', 'Entrar', 'pri'), erro = el('p');
+    const tentar = async () => {
+      b.disabled = true; erro.textContent = 'Abrindo…';
+      try { FIXOS = await abrirCadeado(i.value.trim().toLowerCase()); gravar('cofre', { iv: self.CADEADO.iv, lugares: FIXOS }); chips(); d.remove(); }
+      catch { erro.textContent = 'Senha errada.'; b.disabled = false; }
+    };
+    b.onclick = tentar; i.onkeydown = e => e.key === 'Enter' && tentar();
+    d.append(el('h1', 'PANTERA GPS'), i, b, erro); document.body.append(d);
+  }
+}
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
