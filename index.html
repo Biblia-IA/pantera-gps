@@ -34,6 +34,9 @@ h1{font:12px Michroma,sans-serif;letter-spacing:.18em;color:var(--amb)}
 #lado button{width:48px;height:48px;padding:0;font-size:20px}
 #folha{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 8px);background:var(--painel);border:1px solid var(--linha);border-radius:18px;padding:14px;max-height:48vh;overflow:auto}
 #folha:empty{display:none}
+#folha .alca{display:block;margin:-8px auto 6px;min-height:28px;padding:0 28px;border:0;background:transparent;color:var(--fraco);font-size:18px}
+#folha.mini>:not(.alca):not(b){display:none}
+#folha.mini{padding-bottom:10px}
 .num{display:flex;gap:18px;margin:4px 0 8px}.num b{display:block;font:20px Michroma,sans-serif}.num span{color:var(--fraco);font-size:12px}
 .aviso{border-left:3px solid var(--ruim);padding-left:8px;margin:6px 0;font-size:14px}
 .ok{border-left-color:#5fd38d}
@@ -61,6 +64,7 @@ body:not(.nav) #gps{top:auto;bottom:calc(env(safe-area-inset-bottom) + 12px)}
 <div id="manobra"></div>
 <div id="gps" hidden></div>
 <div id="lado">
+  <button id="bVolta" aria-label="Fazer a volta" hidden>⇄</button>
   <button id="bNorte" aria-label="Girar o mapa"><svg viewBox="-12 -12 24 24" width="26" height="26"><path d="M0-10 5 0H-5Z" fill="#ff5a4d"/><path d="M0 10 5 0H-5Z" fill="#d8d5ce"/></svg></button>
   <button id="bMais" aria-label="Aproximar">+</button>
   <button id="bMenos" aria-label="Afastar">−</button>
@@ -117,6 +121,7 @@ function linha(pts, cor, larg) {
 }
 function pintar() {
   pedido = false;
+  $("#bVolta").hidden = !destino;
   const bn = $('#bNorte svg'); if (bn) { bn.style.transform = 'rotate(' + cam.r + 'rad)'; $('#bNorte').classList.toggle('on', modo === 'direcao'); }
   cx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
   cx.fillStyle = '#101113'; cx.fillRect(0, 0, W, H);
@@ -220,6 +225,7 @@ const solta = e => {
 cv.addEventListener('pointerup', solta); cv.addEventListener('pointercancel', solta);
 cv.addEventListener('wheel', e => { e.preventDefault(); zoom(e.deltaY < 0 ? 1.2 : 1 / 1.2); }, { passive: false });
 const zoom = f => { cam.z = Math.max(0.03, Math.min(4, cam.z * f)); desenhar(); };
+$('#bVolta').onclick = () => { if (navegando) parar(); inverter(); };
 $('#bNorte').onclick = () => {
   if (modo === 'norte' && navegando) modo = 'direcao';
   else { modo = 'norte'; cam.r = 0; }
@@ -231,7 +237,15 @@ $('#bEu').onclick = () => { ligarGps(); if (eu) { [cam.x, cam.y] = xy(eu); cam.z
 
 // ---------- folha ----------
 const el = (tag, texto, cls) => { const e = document.createElement(tag); if (texto) e.textContent = texto; if (cls) e.className = cls; return e; };
-function folha(...filhos) { $('#folha').replaceChildren(...filhos); }
+let mini = false;
+function folha(...filhos) {
+  const f = $('#folha');
+  if (!filhos.length) { f.replaceChildren(); return; }
+  const alca = el('button', mini ? '▴' : '▾', 'alca'); alca.setAttribute('aria-label', mini ? 'Mostrar' : 'Minimizar');
+  alca.onclick = () => { mini = !mini; f.classList.toggle('mini', mini); alca.textContent = mini ? '▴' : '▾'; };
+  f.classList.toggle('mini', mini);
+  f.replaceChildren(alca, ...filhos);
+}
 function acoes(...lista) {
   const d = el('div', '', 'acoes');
   for (const [t, f, cls] of lista) { const b = el('button', t, cls); b.onclick = f; d.append(b); }
