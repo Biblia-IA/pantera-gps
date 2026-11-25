@@ -196,7 +196,7 @@ const PALETAS = {
     fundo: '#EEF1F4', meta: '#EEF1F4',
     rua: ['#DDE3E8', '#FFFFFF', '#FFFFFF', '#F7F9FA', '#F1F4F6', '#F8F9FB', '#E4E9ED'], borda: [null, '#CFD6DD', '#C2CBD4', '#AAB5C0', '#98A4B0', '#DDE2E7', null],
     evitar: '#5D6975', mao: '#9AA6B2', rotulo: '#5D6975', halo: '#EEF1F4', lugar: '#2A323B', lugarTx: '#1A1F25',
-    faixa: '#1A1F25', fio: '#E9EFF5', brilho: 'rgba(13,15,18,.28)', brilhoR: 6,
+    faixa: '#1A1F25', fio: '#E9EFF5', brilho: 'rgba(13,15,18,.55)', brilhoR: 16,
     cromo: [[0, '#6C7886'], [0.44, '#2A323B'], [0.5, '#0F1317'], [0.6, '#4B5662'], [1, '#2A323B']], aco: [[0, '#4B5662'], [0.5, '#1A1F25'], [1, '#3A444E']],
     contorno: '#EEF1F4', luz: '26,31,37', precisao: 'rgba(42,50,59,', marca: '#1A1F25',
   },
@@ -325,16 +325,13 @@ function pintar() {
   if (aqui && precisao > 15) { const q = naTela(xy(aqui)); cx.fillStyle = PAL.precisao + '.10)'; cx.strokeStyle = PAL.precisao + '.45)'; cx.lineWidth = 1; cx.beginPath(); cx.arc(...q, precisao * cam.z, 0, 7); cx.fill(); cx.stroke(); }
   if (aqui) seta(naTela(xy(aqui)), rumoVisto * Math.PI / 180 + cam.r);
 }
-// a rota é um "fio de luz": faixa de metal com um filete claro no centro, como o fio do símbolo
+// a rota é uma linha contínua na cor do tema (prata no escuro, grafite no claro) com o mesmo efeito de luz nos dois
 function pintarRota() {
   const tudo = rota.linha.map(p => naTela(xy(p)));
-  cx.save(); cx.shadowColor = PAL.brilho; cx.shadowBlur = PAL.brilhoR; traco(tudo, PAL.faixa, 7); cx.restore();
-  traco(tudo, PAL.fundo, 7);
-  for (const s of rota.partes) {
-    const g = s.g.map(p => naTela(xy(p)));
-    traco(g, PAL.faixa, 6, s.ruim ? [9, 6] : null);
-    traco(g, PAL.fio, 1.6, s.subida ? [1, 5] : null);
-  }
+  cx.save(); cx.shadowColor = PAL.brilho; cx.shadowBlur = PAL.brilhoR;
+  traco(tudo, PAL.faixa, 6); traco(tudo, PAL.faixa, 6);
+  cx.restore();
+  traco(tudo, PAL.faixa, 6);
 }
 function losango(p, r, cor, vazio) {
   cx.save(); cx.translate(...p); cx.rotate(Math.PI / 4);
@@ -569,12 +566,12 @@ function calcular(silencioso) {
   if (rp.length) aviso(`Vias principais ou acima de 40: ${rp.map(([n, m]) => n + ' (' + km(m) + ')').join(', ')}`, 'alerta');
   if (!ev.length && !rp.length) aviso('Sem avenidas da sua lista no caminho', 'ok');
   for (const s of rota.subidas.slice(0, 3)) aviso(`Subida de ~${s.grau}% na ${s.rua} (${km(s.m)})` + (garupa ? ': talvez precise descer e empurrar' : ''), garupa ? 'alerta' : 'info');
-  if (rota.subidas.length > 3) aviso(`Mais ${rota.subidas.length - 3} trechos de subida (pontilhado no mapa)`, 'info');
+  if (rota.subidas.length > 3) aviso(`Mais ${rota.subidas.length - 3} trechos de subida`, 'info');
   if (rota.cargas > 0.45) aviso(rota.cargas > 1 ? 'Não cabe em uma carga' : 'Ida e volta pode não caber em uma carga: confira a bateria', 'alerta');
   if (!rota.validada) for (const [n, m] of Object.entries(rota.duvidas)) aviso(`Mão não confirmada no mapa: ${n} (${km(m)}). Confira a placa`, 'alerta');
   if (!rota.validada) aviso('O Google Maps respeita a mão das ruas; este app só escolhe o caminho longe das avenidas.', 'info');
   if (pico) aviso('Horário de pico: priorizei ruas mais calmas', 'info');
-  const leg = el('div', '', 'legenda'); leg.innerHTML = '<span><i></i>Rota</span><span><i class="tr"></i>Avenida evitada</span><span><i class="po"></i>Subida</span>';
+  const leg = el('div', '', 'legenda'); leg.innerHTML = '<span><i></i>Rota</span><span><i class="tr"></i>Avenida que você evita</span>';
   folha(titulo(nomeDestino), num, ...avisos, leg, rota.validada
     ? acoes(['Navegar', comecar, 'pri'], ['Google Maps', abrirGoogle], ['Fazer a volta', inverter], botaoGarupa(), ['Fechar', limpar])
     : acoes(['Navegar pelo Google Maps', abrirGoogle, 'pri'], ['Fazer a volta', inverter], botaoGarupa(), ['Fechar', limpar]));
