@@ -322,9 +322,9 @@ function calcular(silencioso) {
   if (rota.subidas.length > 3) aviso(`Mais ${rota.subidas.length - 3} trechos de subida (roxo no mapa)`);
   if (rota.cargas > 0.45) aviso(rota.cargas > 1 ? 'Não cabe em uma carga' : 'Ida e volta pode não caber em uma carga: confira a bateria');
   for (const [n, m] of Object.entries(rota.duvidas)) aviso(`Mão não confirmada no mapa: ${n} (${km(m)}). Confira a placa`);
-  aviso('Sempre confira a placa de mão. Se a rota mandar pra contramão, toque em "Contramão aqui"');
+  aviso('A navegação é feita pelo Google Maps, que respeita a mão das ruas. Este app escolhe o caminho longe das avenidas.', true);
   if (pico) aviso('Horário de pico: priorizei ruas mais calmas', true);
-  folha(el('b', nomeDestino), num, ...avisos, acoes(['Abrir no Google Maps', abrirGoogle, 'pri'], ['Começar aqui', comecar], botaoGarupa(), ['Fechar', limpar]));
+  folha(el('b', nomeDestino), num, ...avisos, acoes(['Navegar pelo Google Maps', abrirGoogle, 'pri'], botaoGarupa(), ['Fechar', limpar]));
   enquadrar();
 }
 // o Google respeita a mão das ruas; as paradas seguram ele no nosso caminho (longe das avenidas)
