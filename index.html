@@ -68,7 +68,18 @@ body.nav #topo{opacity:0;pointer-events:none;transform:translateY(-20px)}body.na
 #cadeado .tecl button{height:72px;font-size:28px;font-weight:400;border-radius:50%;background:rgba(20,24,30,.05)}
 #gps{position:fixed;left:12px;top:calc(env(safe-area-inset-top) + 100px);font-size:12px;font-weight:500;padding:5px 10px;border-radius:999px;display:flex;align-items:center;gap:6px}
 #gps::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
-#gps[hidden]{display:none}#gps.bom{color:var(--bom)}#gps.ruim{color:var(--ruim)}
+#gps[hidden]{display:none}
+/* tema BC (Balestra Corporation): grafite, assoalho, aço, prata; o cromo é o único brilho */
+body.bc{--bg:#0D0F12;--vidro:rgba(23,27,32,.82);--vidro2:rgba(23,27,32,.9);--tx:#E9EFF5;--fraco:#8794A2;--sutil:rgba(233,239,245,.08);--amb:#E9EFF5;--ambsuave:rgba(233,239,245,.12);--ruim:#d4605c;--bom:#9fb8a8;--sombra:0 10px 34px rgba(0,0,0,.45),inset 0 1px 0 rgba(233,239,245,.06);color-scheme:dark;font-family:Geist,-apple-system,system-ui,sans-serif}
+body.bc h1{font-family:Michroma,sans-serif;font-size:10px;letter-spacing:.28em;background:linear-gradient(90deg,#8794A2,#fff 45%,#8794A2);-webkit-background-clip:text;background-clip:text;color:transparent}
+body.bc button.pri{background:linear-gradient(180deg,#f4f7fa,#b9c3ce);color:#0D0F12;font-weight:600}
+body.bc .num b{font-family:Michroma,sans-serif;font-size:18px;font-weight:400}
+body.bc #folha>b{font-family:Michroma,sans-serif;font-size:15px;font-weight:400;letter-spacing:.04em}
+body.bc .aviso{color:#c3ccd6}
+body.bc #manobra{border-left-color:#E9EFF5;font-weight:500}
+body.bc #folha .alca::after{background:rgba(233,239,245,.22)}
+body.bc #cadeado .tecl button{background:rgba(233,239,245,.06);font-family:Michroma,sans-serif;font-size:22px}
+body.bc #busca{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%238794A2' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Cpath d='m12.5 12.5 4 4'/%3E%3C/svg%3E")}#gps.bom{color:var(--bom)}#gps.ruim{color:var(--ruim)}
 body:not(.nav) #gps{top:auto;bottom:calc(env(safe-area-inset-bottom) + 14px)}
 </style>
 </head>
@@ -97,6 +108,19 @@ body:not(.nav) #gps{top:auto;bottom:calc(env(safe-area-inset-bottom) + 14px)}
 'use strict';
 const $ = s => document.querySelector(s);
 const G = Rotas.carregar(MAPA);
+// cores do mapa por tema: claro (padrão) ou BC (?tema=bc)
+const BC = new URLSearchParams(location.search).get('tema') === 'bc';
+if (BC) { document.body.classList.add('bc'); const f = document.createElement('link'); f.rel = 'stylesheet'; f.href = 'https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Michroma&display=swap'; document.head.append(f); }
+const PAL = BC ? {
+  fundo: '#0D0F12', cor: ['#1d2a24', '#1b2026', '#20262d', '#2a323b', '#343e49', '#15191e', '#1a1d21'], borda: [null, '#0a0c0f', '#0a0c0f', '#0a0c0f', '#0a0c0f', null, null],
+  evitarB: '#2a1414', evitar: '#3a1f1f', seta: '#56616d', rotulo: '#8794A2', halo: 'rgba(13,15,18,.9)', lugar: '#E9EFF5', lugarTx: '#E9EFF5',
+  rotaHalo: 'rgba(233,239,245,.18)', rota: '#E9EFF5', subida: '#8f9bd6', ruim: '#d4605c', aro: '#0D0F12', disco: '#171B20', cone: '233,239,245', ponta: '#E9EFF5', olho: '#E9EFF5', cab: '#05060a', orelha: '#2a323b', focinho: '#56616d',
+} : {
+  fundo: '#f3f1ec', cor: ['#cfe6d5', '#ffffff', '#ffffff', '#fff4cc', '#ffe7a3', '#fbfaf7', '#ebe3d4'], borda: [null, '#dcd7ce', '#d3cdc2', '#e7d28e', '#e2bf66', '#e6e2da', null],
+  evitarB: '#eaa7a2', evitar: '#f7d3d0', seta: '#a3a7ae', rotulo: '#5d6168', halo: 'rgba(255,255,255,.92)', lugar: '#f08a00', lugarTx: '#b86400',
+  rotaHalo: '#ffffff', rota: '#f08a00', subida: '#8e5cf7', ruim: '#e5484d', aro: '#fff', disco: '#fff', cone: '240,138,0', ponta: '#f08a00', olho: '#ffb02e', cab: '#1d1f23', orelha: '#3a3d43', focinho: '#6a6e76',
+};
+if (BC) document.querySelector('meta[name=theme-color]').content = '#0D0F12';
 const ler = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const gravar = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 
@@ -143,13 +167,12 @@ function pintar() {
   $("#bVolta").hidden = !destino;
   const bn = $('#bNorte svg'); if (bn) { bn.style.transform = 'rotate(' + cam.r + 'rad)'; $('#bNorte').classList.toggle('on', modo === 'direcao'); }
   cx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-  cx.fillStyle = '#f3f1ec'; cx.fillRect(0, 0, W, H);
+  cx.fillStyle = PAL.fundo; cx.fillRect(0, 0, W, H);
   cx.lineCap = cx.lineJoin = 'round';
   const raio = Math.hypot(W, H) / cam.z, z = cam.z;
   const vis = T.filter(t => t.box[2] > cam.x - raio && t.box[0] < cam.x + raio && t.box[3] > cam.y - raio && t.box[1] < cam.y + raio);
-  // ruas claras com contorno fino, como mapa de dia (ciclovia, rua, coletora, secundária, principal, serviço, terra)
-  const COR = ['#cfe6d5', '#ffffff', '#ffffff', '#fff4cc', '#ffe7a3', '#fbfaf7', '#ebe3d4'];
-  const BORDA = [null, '#dcd7ce', '#d3cdc2', '#e7d28e', '#e2bf66', '#e6e2da', null];
+  // ruas com contorno fino (ciclovia, rua, coletora, secundária, principal, serviço, terra)
+  const COR = PAL.cor, BORDA = PAL.borda;
   const LARG = [2, 4, 6, 8, 9, 2.5, 2.5];
   const esc = Math.max(0.3, Math.min(2.4, z * 1.6));
   const ordem = [5, 6, 0, 1, 2, 3, 4];
@@ -158,14 +181,14 @@ function pintar() {
     if (z < 0.1 && (c === 5 || c === 6)) continue;
     for (const t of vis) if (t.c === c) {
       const larg = (t.evitar ? 8 : LARG[c]) * esc;
-      if (passo === 0) { const b = t.evitar ? '#eaa7a2' : BORDA[c]; if (b) linha(pts.get(t), b, larg + 2 * Math.max(0.6, esc * 0.7)); }
-      else linha(pts.get(t), t.evitar ? '#f7d3d0' : COR[c], larg);
+      if (passo === 0) { const b = t.evitar ? PAL.evitarB : BORDA[c]; if (b) linha(pts.get(t), b, larg + 2 * Math.max(0.6, esc * 0.7)); }
+      else linha(pts.get(t), t.evitar ? PAL.evitar : COR[c], larg);
     }
   }
   if (rota) desenharRota();
   // seta de mão única
   if (z > 0.35) {
-    cx.strokeStyle = '#a3a7ae'; cx.lineWidth = 1.3;
+    cx.strokeStyle = PAL.seta; cx.lineWidth = 1.3;
     const postas = [];
     for (const t of vis) {
       if (!t.mao || t.c === 5) continue;
@@ -179,7 +202,7 @@ function pintar() {
   }
   // nomes das ruas (avenidas aparecem primeiro)
   if (z > 0.1) {
-    cx.font = '500 11px -apple-system,BlinkMacSystemFont,system-ui'; cx.fillStyle = '#5d6168'; cx.textAlign = 'center';
+    cx.font = (BC ? '500 11px Geist,' : '500 11px ') + '-apple-system,BlinkMacSystemFont,system-ui'; cx.fillStyle = PAL.rotulo; cx.textAlign = 'center';
     const postos = [];
     for (const t of [...vis].sort((a, b) => (b.c >= 2 && b.c <= 4) - (a.c >= 2 && a.c <= 4))) {
       if (!t.nome || t.g.length < 2 || (z < 0.28 && !(t.c >= 2 && t.c <= 4))) continue;
@@ -192,7 +215,7 @@ function pintar() {
       if (ang > Math.PI / 2) ang -= Math.PI; if (ang < -Math.PI / 2) ang += Math.PI;
       const curto = t.nome.replace(/^Rua /, 'R. ').replace(/^Avenida /, 'Av. ').replace(/^Alameda /, 'Al. ');
       cx.save(); cx.translate(...m); cx.rotate(ang);
-      cx.strokeStyle = 'rgba(255,255,255,.92)'; cx.lineWidth = 3; cx.strokeText(curto, 0, -6); cx.fillText(curto, 0, -6); cx.restore();
+      cx.strokeStyle = PAL.halo; cx.lineWidth = 3; cx.strokeText(curto, 0, -6); cx.fillText(curto, 0, -6); cx.restore();
     }
   }
   for (const m of marcas) ponto(naTela(xy(m.p)), m.tipo === 'buraco' ? '#d99a3d' : '#e5484d', 6);
@@ -201,19 +224,19 @@ function pintar() {
   cx.font = '600 12px -apple-system,BlinkMacSystemFont,system-ui'; cx.textAlign = 'left';
   for (const [n, p] of lugares()) if (p) {
     const q = naTela(xy(p)); if (q[0] < -50 || q[1] < -20 || q[0] > W + 50 || q[1] > H + 20) continue;
-    ponto(q, '#f08a00', 5); cx.strokeStyle = 'rgba(255,255,255,.95)'; cx.lineWidth = 3.5; cx.strokeText(n, q[0] + 9, q[1] + 4); cx.fillStyle = '#b86400'; cx.fillText(n, q[0] + 9, q[1] + 4);
+    ponto(q, PAL.lugar, 5); cx.strokeStyle = PAL.halo; cx.lineWidth = 3.5; cx.strokeText(n, q[0] + 9, q[1] + 4); cx.fillStyle = PAL.lugarTx; cx.fillText(n, q[0] + 9, q[1] + 4);
   }
   const aqui = visto || eu;
   if (aqui && precisao > 15) { const q = naTela(xy(aqui)); cx.fillStyle = 'rgba(47,109,246,.10)'; cx.strokeStyle = 'rgba(47,109,246,.35)'; cx.lineWidth = 1; cx.beginPath(); cx.arc(...q, precisao * cam.z, 0, 7); cx.fill(); cx.stroke(); }
   if (aqui) pantera(naTela(xy(aqui)), rumoVisto * Math.PI / 180 + cam.r);
 }
 function desenharRota() {
-  cx.save(); cx.shadowColor = 'rgba(120,60,0,.25)'; cx.shadowBlur = 6;
-  linha(rota.linha.map(p => naTela(xy(p))), '#ffffff', 11);
+  cx.save(); cx.shadowColor = BC ? 'rgba(233,239,245,.55)' : 'rgba(120,60,0,.25)'; cx.shadowBlur = BC ? 14 : 6;
+  linha(rota.linha.map(p => naTela(xy(p))), PAL.rotaHalo, 11);
   cx.restore();
-  for (const s of rota.partes) linha(s.g.map(p => naTela(xy(p))), s.ruim ? '#e5484d' : s.subida ? '#8e5cf7' : '#f08a00', 6.5);
+  for (const s of rota.partes) linha(s.g.map(p => naTela(xy(p))), s.ruim ? PAL.ruim : s.subida ? PAL.subida : PAL.rota, BC ? 4.5 : 6.5);
 }
-function ponto(p, cor, r) { cx.fillStyle = cor; cx.strokeStyle = '#fff'; cx.lineWidth = 2.5; cx.beginPath(); cx.arc(...p, r, 0, 7); cx.stroke(); cx.fill(); }
+function ponto(p, cor, r) { cx.fillStyle = cor; cx.strokeStyle = PAL.aro; cx.lineWidth = 2.5; cx.beginPath(); cx.arc(...p, r, 0, 7); cx.stroke(); cx.fill(); }
 function alfinete(p) { // gota do destino
   cx.save(); cx.translate(p[0], p[1]); cx.shadowColor = 'rgba(0,0,0,.25)'; cx.shadowBlur = 6; cx.shadowOffsetY = 2;
   cx.beginPath(); cx.moveTo(0, 0); cx.bezierCurveTo(-4, -8, -11, -12, -11, -21); cx.arc(0, -21, 11, Math.PI, 0); cx.bezierCurveTo(11, -12, 4, -8, 0, 0);
@@ -227,22 +250,23 @@ const OLHOS = new Path2D('M27 44C33 41 41 44 45 50C39 53 31 51 27 44Z M73 44C67 
 const NARIZ = new Path2D('M44 62H56L50 68.5Z'), BOCA = new Path2D('M50 68.5V73M50 73C47 77 43 77 41 75M50 73C53 77 57 77 59 75');
 function cabeca(x, y, tam) {
   cx.save(); cx.translate(x - tam / 2, y - tam / 2); cx.scale(tam / 100, tam / 100);
-  cx.fillStyle = '#1d1f23'; cx.fill(CAB); cx.fillStyle = '#3a3d43'; cx.fill(ORELHA);
-  cx.fillStyle = '#ffb02e'; cx.fill(OLHOS);
-  cx.fillStyle = '#1d1f23'; cx.beginPath(); cx.ellipse(37.5, 47.5, 1.5, 3.4, -0.5, 0, 7); cx.ellipse(62.5, 47.5, 1.5, 3.4, 0.5, 0, 7); cx.fill();
-  cx.fillStyle = '#6a6e76'; cx.fill(NARIZ); cx.strokeStyle = '#6a6e76'; cx.lineWidth = 1.8; cx.lineCap = 'round'; cx.stroke(BOCA);
+  cx.fillStyle = PAL.cab; cx.fill(CAB); cx.fillStyle = PAL.orelha; cx.fill(ORELHA);
+  cx.fillStyle = PAL.olho; cx.fill(OLHOS);
+  cx.fillStyle = PAL.cab; cx.beginPath(); cx.ellipse(37.5, 47.5, 1.5, 3.4, -0.5, 0, 7); cx.ellipse(62.5, 47.5, 1.5, 3.4, 0.5, 0, 7); cx.fill();
+  cx.fillStyle = PAL.focinho; cx.fill(NARIZ); cx.strokeStyle = PAL.focinho; cx.lineWidth = 1.8; cx.lineCap = 'round'; cx.stroke(BOCA);
   cx.restore();
 }
 function pantera(p, ang) {
   const [x, y] = p;
   cx.save(); cx.translate(x, y); cx.rotate(ang);
-  const g = cx.createRadialGradient(0, 0, 12, 0, 0, 70); g.addColorStop(0, 'rgba(240,138,0,.42)'); g.addColorStop(1, 'rgba(240,138,0,0)');
+  const g = cx.createRadialGradient(0, 0, 12, 0, 0, 70); g.addColorStop(0, 'rgba(' + PAL.cone + ',.42)'); g.addColorStop(1, 'rgba(' + PAL.cone + ',0)');
   cx.fillStyle = g; cx.beginPath(); cx.moveTo(0, 0); cx.arc(0, 0, 70, -Math.PI / 2 - 0.45, -Math.PI / 2 + 0.45); cx.closePath(); cx.fill();
   cx.restore();
   cx.save(); cx.shadowColor = 'rgba(0,0,0,.28)'; cx.shadowBlur = 10; cx.shadowOffsetY = 2;
-  cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(x, y, 23, 0, 7); cx.fill(); cx.restore();
+  if (BC) { const m = cx.createLinearGradient(x, y - 23, x, y + 23); m.addColorStop(0, '#f4f7fa'); m.addColorStop(0.5, '#8794A2'); m.addColorStop(1, '#E9EFF5'); cx.fillStyle = m; cx.beginPath(); cx.arc(x, y, 24.5, 0, 7); cx.fill(); }
+  cx.fillStyle = PAL.disco; cx.beginPath(); cx.arc(x, y, 23, 0, 7); cx.fill(); cx.restore();
   cx.save(); cx.translate(x, y); cx.rotate(ang);
-  cx.fillStyle = '#f08a00'; cx.beginPath(); cx.moveTo(0, -32); cx.lineTo(7, -22); cx.lineTo(-7, -22); cx.closePath(); cx.fill();
+  cx.fillStyle = PAL.ponta; cx.beginPath(); cx.moveTo(0, -32); cx.lineTo(7, -22); cx.lineTo(-7, -22); cx.closePath(); cx.fill();
   cx.restore();
   cabeca(x, y + 1, 38);
 }
