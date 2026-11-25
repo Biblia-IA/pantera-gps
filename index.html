@@ -42,6 +42,9 @@ h1{font:12px Michroma,sans-serif;letter-spacing:.18em;color:var(--amb)}
 body.nav #topo{display:none}body.nav #manobra{display:block}
 #cadeado{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;justify-content:center;gap:12px;padding:32px}
 #cadeado h1,#cadeado p{text-align:center}
+#gps{position:fixed;left:12px;top:calc(env(safe-area-inset-top) + 150px);font-size:13px;font-weight:600;padding:6px 10px;border-radius:10px;background:var(--painel);border:1px solid var(--linha)}
+#gps.bom{color:#5fd38d}#gps.ruim{color:var(--ruim)}
+body:not(.nav) #gps{top:auto;bottom:calc(env(safe-area-inset-bottom) + 12px)}
 </style>
 </head>
 <body>
@@ -53,6 +56,7 @@ body.nav #topo{display:none}body.nav #manobra{display:block}
   <div id="chips"></div>
 </div>
 <div id="manobra"></div>
+<div id="gps" hidden></div>
 <div id="lado">
   <button id="bMais" aria-label="Aproximar">+</button>
   <button id="bMenos" aria-label="Afastar">−</button>
@@ -157,6 +161,12 @@ function pintar() {
   for (const m of marcas) ponto(naTela(xy(m.p)), m.tipo === 'buraco' ? '#d6a35c' : '#ff5a4d', 6);
   if (destino) ponto(naTela(xy(destino)), '#eceae6', 9);
   if (origemManual && !eu) ponto(naTela(xy(origemManual)), '#5fd38d', 9);
+  cx.font = '700 13px Geist,system-ui'; cx.textAlign = 'left';
+  for (const [n, p] of lugares()) if (p) {
+    const q = naTela(xy(p)); if (q[0] < -50 || q[1] < -20 || q[0] > W + 50 || q[1] > H + 20) continue;
+    ponto(q, '#ffb02e', 5); cx.strokeStyle = '#101113'; cx.lineWidth = 4; cx.strokeText(n, q[0] + 9, q[1] + 4); cx.fillStyle = '#ffb02e'; cx.fillText(n, q[0] + 9, q[1] + 4);
+  }
+  if (eu && precisao > 15) { const q = naTela(xy(eu)); cx.fillStyle = 'rgba(95,160,255,.15)'; cx.strokeStyle = 'rgba(95,160,255,.6)'; cx.lineWidth = 1.5; cx.beginPath(); cx.arc(...q, precisao * cam.z, 0, 7); cx.fill(); cx.stroke(); }
   if (eu) pantera(naTela(xy(eu)), rumo * Math.PI / 180 + cam.r);
 }
 function desenharRota() {
@@ -374,22 +384,29 @@ function simular() {
 }
 
 // ---------- GPS ----------
-let vigia = null, ultima = null;
+let vigia = null, ultima = null, precisao = 0;
 function posicao(p, direcao) {
   eu = p;
   if (direcao != null && !Number.isNaN(direcao)) rumo = direcao;
-  if (seguir) { [cam.x, cam.y] = xy(p); cam.r = navegando ? -rumo * Math.PI / 180 : 0; }
+  if (seguir) { [cam.x, cam.y] = xy(p); cam.r = 0; }
   andou(p); desenhar();
 }
 function ligarGps() {
   if (vigia != null || !navigator.geolocation) return;
   vigia = navigator.geolocation.watchPosition(g => {
     const p = [g.coords.latitude, g.coords.longitude], primeira = !eu;
+    // posição ruim (só Wi-Fi ou antena) não entra se já existe uma boa
+    if (g.coords.accuracy > 60 && eu && precisao <= 60) return;
+    precisao = Math.round(g.coords.accuracy);
+    const ind = $('#gps'); ind.hidden = false;
+    ind.textContent = precisao <= 30 ? 'GPS ok · ±' + precisao + ' m' : 'GPS fraco · ±' + precisao + ' m · espere ou vá pra céu aberto';
+    ind.className = precisao <= 30 ? 'bom' : 'ruim';
     let d = g.coords.speed > 1 ? g.coords.heading : null;
     if (d == null && ultima && Rotas.metros(ultima, p) > 8) d = azim(ultima, p);
     if (!ultima || Rotas.metros(ultima, p) > 8) ultima = p;
     posicao(p, d);
-    if (primeira && destino && !rota) calcular();
+    if (destino && !navegando && precisao <= 60 && (!rota || Rotas.metros(p, rota.linha[0]) > 80)) calcular();
+    else if (primeira && destino && !rota) calcular();
     else if (primeira && !destino) { [cam.x, cam.y] = xy(p); cam.z = 0.6; }
   }, erro => { desligarGps(); folha(el('b', 'Sem GPS aqui'), el('p', erro.code === 1 ? 'A localização foi negada ou está bloqueada. Toque no mapa e escolha "Sair daqui".' : 'Não consegui sua posição agora.'), acoes(['Fechar', () => folha()])); }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 });
 }
