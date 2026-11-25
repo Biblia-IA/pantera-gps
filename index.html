@@ -69,6 +69,8 @@ body.nav #topo{opacity:0;pointer-events:none;transform:translateY(-20px)}body.na
 #gps{position:fixed;left:12px;top:calc(env(safe-area-inset-top) + 100px);font-size:12px;font-weight:500;padding:5px 10px;border-radius:999px;display:flex;align-items:center;gap:6px}
 #gps::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
 #gps[hidden]{display:none}
+#bTema .sol{display:none}body.bc #bTema .lua{display:none}body.bc #bTema .sol{display:block}
+body.nav #bTema{display:none}
 /* tema BC (Balestra Corporation): grafite, assoalho, aço, prata; o cromo é o único brilho */
 body.bc{--bg:#0D0F12;--vidro:rgba(23,27,32,.82);--vidro2:rgba(23,27,32,.9);--tx:#E9EFF5;--fraco:#8794A2;--sutil:rgba(233,239,245,.08);--amb:#E9EFF5;--ambsuave:rgba(233,239,245,.12);--ruim:#d4605c;--bom:#9fb8a8;--sombra:0 10px 34px rgba(0,0,0,.45),inset 0 1px 0 rgba(233,239,245,.06);color-scheme:dark;font-family:Geist,-apple-system,system-ui,sans-serif}
 body.bc h1{font-family:Michroma,sans-serif;font-size:10px;letter-spacing:.28em;background:linear-gradient(90deg,#8794A2,#fff 45%,#8794A2);-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -99,6 +101,7 @@ body:not(.nav) #gps{top:auto;bottom:calc(env(safe-area-inset-bottom) + 14px)}
   <button id="bMais" aria-label="Aproximar"><svg viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg></button>
   <button id="bMenos" aria-label="Afastar"><svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg></button>
   <button id="bEu" aria-label="Minha posição"><svg viewBox="0 0 24 24"><path d="M20 4 4 10.5l6.5 3 3 6.5Z"/></svg></button>
+  <button id="bTema" aria-label="Alternar branco e escuro"><svg class="lua" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"/></svg><svg class="sol" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg></button>
 </div>
 <div id="folha" class="vidro"></div>
 <script src="cadeado.js"></script>
@@ -109,7 +112,10 @@ body:not(.nav) #gps{top:auto;bottom:calc(env(safe-area-inset-bottom) + 14px)}
 const $ = s => document.querySelector(s);
 const G = Rotas.carregar(MAPA);
 // cores do mapa por tema: claro (padrão) ou BC (?tema=bc)
-const BC = new URLSearchParams(location.search).get('tema') === 'bc';
+// escuro (BC) ou branco: o link ?tema= manda; senão vale a última escolha no botão (padrão: escuro)
+const temaLink = new URLSearchParams(location.search).get('tema');
+let temaSalvo = 'bc'; try { temaSalvo = localStorage.getItem('tema') || 'bc'; } catch {}
+const BC = temaLink ? temaLink === 'bc' : temaSalvo === 'bc';
 if (BC) { document.body.classList.add('bc'); const f = document.createElement('link'); f.rel = 'stylesheet'; f.href = 'https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Michroma&display=swap'; document.head.append(f); }
 const PAL = BC ? {
   fundo: '#0D0F12', cor: ['#1d2a24', '#1b2026', '#20262d', '#2a323b', '#343e49', '#15191e', '#1a1d21'], borda: [null, '#0a0c0f', '#0a0c0f', '#0a0c0f', '#0a0c0f', null, null],
@@ -364,7 +370,12 @@ $('#bNorte').onclick = () => {
   if (modo === 'direcao' && eu) { seguir = true; const [x, y] = xy(eu); voar({ x, y, r: -rumo * Math.PI / 180 }, 420); }
   gravar('modo', modo === 'livre' ? 'norte' : modo); desenhar();
 };
-$('#bMais').onclick = () => voar({ z: limZ(cam.z * 1.7) }, 320); $('#bMenos').onclick = () => voar({ z: limZ(cam.z / 1.7) }, 320);
+// troca branco/escuro e recarrega já no outro tema (o destino escolhido volta sozinho)
+$('#bTema').onclick = () => {
+  try { localStorage.setItem('tema', BC ? 'claro' : 'bc'); sessionStorage.setItem('volta', JSON.stringify({ destino, nomeDestino, origemManual, cam })); } catch {}
+  const u = new URL(location.href); u.searchParams.delete('tema'); location.replace(u.href);
+};
+$('#bMais').onclick =() => voar({ z: limZ(cam.z * 1.7) }, 320); $('#bMenos').onclick = () => voar({ z: limZ(cam.z / 1.7) }, 320);
 $('#bEu').onclick = () => { ligarGps(); if (eu) { const [x, y] = xy(eu); seguir = true; voar({ x, y, z: Math.max(cam.z, 0.7) }); } };
 
 // ---------- folha ----------
@@ -652,6 +663,11 @@ if (self.CADEADO) {
     d.append(el('h1', 'PANTERA GPS'), bolas, tecl, erro); document.body.append(d);
   }
 }
+// voltando da troca de tema: mesmo lugar no mapa e mesmo destino
+try {
+  const v = JSON.parse(sessionStorage.getItem('volta') || 'null'); sessionStorage.removeItem('volta');
+  if (v) { Object.assign(cam, v.cam); origemManual = v.origemManual; if (v.destino) irPara(v.nomeDestino, v.destino); else desenhar(); }
+} catch {}
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js');
 </script>
 </body>
