@@ -58,6 +58,7 @@ body:not(.nav) #gps{top:auto;bottom:calc(env(safe-area-inset-bottom) + 12px)}
 <div id="manobra"></div>
 <div id="gps" hidden></div>
 <div id="lado">
+  <button id="bNorte" aria-label="Girar o mapa"><svg viewBox="-12 -12 24 24" width="26" height="26"><path d="M0-10 5 0H-5Z" fill="#ff5a4d"/><path d="M0 10 5 0H-5Z" fill="#d8d5ce"/></svg></button>
   <button id="bMais" aria-label="Aproximar">+</button>
   <button id="bMenos" aria-label="Afastar">−</button>
   <button id="bEu" aria-label="Minha posição">◎</button>
@@ -113,6 +114,7 @@ function linha(pts, cor, larg) {
 }
 function pintar() {
   pedido = false;
+  const bn = $('#bNorte svg'); if (bn) { bn.style.transform = 'rotate(' + cam.r + 'rad)'; $('#bNorte').classList.toggle('on', modo === 'direcao'); }
   cx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
   cx.fillStyle = '#101113'; cx.fillRect(0, 0, W, H);
   cx.lineCap = cx.lineJoin = 'round';
@@ -186,8 +188,8 @@ function pantera(p, ang) { // setinha com orelhas e olhos
 }
 
 // ---------- gestos ----------
-const dedos = new Map(); let mexeu = 0, antes = null;
-cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); dedos.set(e.pointerId, [e.clientX, e.clientY]); if (dedos.size === 1) mexeu = 0; antes = null; });
+const dedos = new Map(); let mexeu = 0, angAntes = null, antes = null; angAntes = null;
+cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); dedos.set(e.pointerId, [e.clientX, e.clientY]); if (dedos.size === 1) mexeu = 0; antes = null; angAntes = null; });
 cv.addEventListener('pointermove', e => {
   const v = dedos.get(e.pointerId); if (!v) return;
   const n = [e.clientX, e.clientY];
@@ -199,16 +201,28 @@ cv.addEventListener('pointermove', e => {
   if (dedos.size === 2) {
     const [a, b] = [...dedos.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]);
     if (antes) zoom(d / antes); antes = d; mexeu = 99;
+    const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+    if (angAntes != null) {
+      const da = ((ang - angAntes + 3 * Math.PI) % (2 * Math.PI)) - Math.PI;
+      if (Math.abs(da) < 0.5) { cam.r += da; if (Math.abs(da) > 0.004) modo = 'livre'; }
+    }
+    angAntes = ang;
   }
   desenhar();
 });
 const solta = e => {
-  if (!dedos.delete(e.pointerId)) return; antes = null;
+  if (!dedos.delete(e.pointerId)) return; antes = null; angAntes = null;
   if (e.type === 'pointerup' && !dedos.size && mexeu <= 8 && !navegando) tocou(ll(...noMundo(e.clientX, e.clientY)));
 };
 cv.addEventListener('pointerup', solta); cv.addEventListener('pointercancel', solta);
 cv.addEventListener('wheel', e => { e.preventDefault(); zoom(e.deltaY < 0 ? 1.2 : 1 / 1.2); }, { passive: false });
 const zoom = f => { cam.z = Math.max(0.03, Math.min(4, cam.z * f)); desenhar(); };
+$('#bNorte').onclick = () => {
+  if (modo === 'norte' && navegando) modo = 'direcao';
+  else { modo = 'norte'; cam.r = 0; }
+  if (modo === 'direcao' && eu) { seguir = true; cam.r = -rumo * Math.PI / 180; [cam.x, cam.y] = xy(eu); }
+  gravar('modo', modo === 'livre' ? 'norte' : modo); desenhar();
+};
 $('#bMais').onclick = () => zoom(1.5); $('#bMenos').onclick = () => zoom(1 / 1.5);
 $('#bEu').onclick = () => { ligarGps(); if (eu) { [cam.x, cam.y] = xy(eu); cam.z = Math.max(cam.z, 0.7); seguir = true; desenhar(); } };
 
@@ -363,7 +377,7 @@ function marcar2(tipo) {
   desenhar();
 }
 async function comecar() {
-  navegando = true; seguir = true; fora = 0; document.body.classList.add('nav'); cam.z = 1.4;
+  navegando = true; seguir = true; fora = 0; if (modo === 'livre') modo = 'norte'; document.body.classList.add('nav'); cam.z = 1.4;
   try { trava = await navigator.wakeLock.request('screen'); } catch {}
   if (new URLSearchParams(location.search).has('sim')) simular(); else ligarGps();
   const p = eu || rota.linha[0];
@@ -384,11 +398,11 @@ function simular() {
 }
 
 // ---------- GPS ----------
-let vigia = null, ultima = null, precisao = 0;
+let vigia = null, ultima = null, precisao = 0, modo = ler('modo', 'norte');
 function posicao(p, direcao) {
   eu = p;
   if (direcao != null && !Number.isNaN(direcao)) rumo = direcao;
-  if (seguir) { [cam.x, cam.y] = xy(p); cam.r = 0; }
+  if (seguir) { [cam.x, cam.y] = xy(p); if (modo === 'direcao') cam.r = -rumo * Math.PI / 180; }
   andou(p); desenhar();
 }
 function ligarGps() {
