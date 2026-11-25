@@ -685,6 +685,30 @@ function posicao(p, direcao) {
   requestAnimationFrame(passo);
   andou(p);
 }
+// bússola do celular: parado (ou devagar) a seta segue pra onde o celular aponta; andando, vale o rumo do GPS
+let bussolaOn = false, andandoAte = 0;
+function ligarBussola() {
+  if (bussolaOn) return; bussolaOn = true;
+  const ouvir = () => {
+    const ler = e => {
+      let h = e.webkitCompassHeading != null ? e.webkitCompassHeading : (e.absolute && e.alpha != null ? 360 - e.alpha : null);
+      if (h == null || Number.isNaN(h)) return;
+      h = (h + ((screen.orientation && screen.orientation.angle) || window.orientation || 0) + 360) % 360;
+      if (performance.now() < andandoAte) return; // em movimento o GPS manda
+      const d = ((h - rumoVisto + 540) % 360) - 180;
+      if (Math.abs(d) < 1.5) return;
+      rumo = h; rumoVisto += d * 0.35; // suaviza o tremido da bússola
+      if (seguir && modo === 'direcao') cam.r = -rumoVisto * Math.PI / 180;
+      desenhar();
+    };
+    addEventListener('deviceorientationabsolute', ler); addEventListener('deviceorientation', ler);
+  };
+  // no iPhone o site precisa pedir licença, e só pode pedir depois de um toque
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function')
+    DeviceOrientationEvent.requestPermission().then(s => { if (s === 'granted') ouvir(); else bussolaOn = false; }).catch(() => { bussolaOn = false; });
+  else ouvir();
+}
+document.addEventListener('click', ligarBussola);
 function ligarGps() {
   if (vigia != null || !navigator.geolocation) return;
   vigia = navigator.geolocation.watchPosition(g => {
@@ -693,8 +717,10 @@ function ligarGps() {
     precisao = Math.round(g.coords.accuracy);
     const ind = $('#gps'); ind.hidden = false; ind.className = 'placa' + (precisao <= 30 ? '' : ' ruim');
     ind.innerHTML = '<i></i>'; ind.append(precisao <= 30 ? 'GPS ±' + precisao + ' M' : 'GPS FRACO ±' + precisao + ' M');
-    let d = g.coords.speed > 1 ? g.coords.heading : null;
-    if (d == null && ultima && Rotas.metros(ultima, p) > 8) d = azim(ultima, p);
+    const andando = g.coords.speed > 1.5; // acima de ~5 km/h o rumo do GPS é confiável
+    if (andando) andandoAte = performance.now() + 4000;
+    let d = andando ? g.coords.heading : null;
+    if (d == null && !bussolaOn && ultima && Rotas.metros(ultima, p) > 8) d = azim(ultima, p);
     if (!ultima || Rotas.metros(ultima, p) > 8) ultima = p;
     posicao(p, d);
     if (destino && !navegando && precisao <= 60 && (!rota || Rotas.metros(p, rota.linha[0]) > 80)) calcular();
