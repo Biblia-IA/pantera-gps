@@ -220,14 +220,31 @@ function alfinete(p) { // gota do destino
   cx.fillStyle = '#e5484d'; cx.fill(); cx.shadowColor = 'transparent';
   cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(0, -21, 4, 0, 7); cx.fill(); cx.restore();
 }
-function pantera(p, ang) { // setinha com orelhas e olhos
-  cx.save(); cx.translate(...p); cx.rotate(ang);
-  cx.shadowColor = 'rgba(0,0,0,.3)'; cx.shadowBlur = 8; cx.shadowOffsetY = 2;
-  cx.beginPath(); cx.moveTo(0, -22); cx.lineTo(7, -9); cx.lineTo(16, -14); cx.lineTo(15, 17); cx.lineTo(0, 9); cx.lineTo(-15, 17); cx.lineTo(-16, -14); cx.lineTo(-7, -9); cx.closePath();
-  cx.fillStyle = '#1d1f23'; cx.strokeStyle = '#ffffff'; cx.lineWidth = 2.5; cx.fill(); cx.shadowColor = 'transparent'; cx.stroke();
-  cx.fillStyle = '#ffb02e';
-  for (const s of [-1, 1]) { cx.beginPath(); cx.ellipse(s * 6, -2, 3.4, 1.7, s * -0.5, 0, 7); cx.fill(); }
+// cabeça de pantera (mesmo desenho do ícone do app), sempre em pé; a direção vem do cone e da seta na borda
+const CAB = new Path2D('M22 30C20 18 26 12 33 16L40 22C46 20 54 20 60 22L67 16C74 12 80 18 78 30C86 40 86 58 78 70C70 82 60 88 50 88C40 88 30 82 22 70C14 58 14 40 22 30Z');
+const ORELHA = new Path2D('M27 27 31 20 37 24Z M73 27 69 20 63 24Z');
+const OLHOS = new Path2D('M27 44C33 41 41 44 45 50C39 53 31 51 27 44Z M73 44C67 41 59 44 55 50C61 53 69 51 73 44Z');
+const NARIZ = new Path2D('M44 62H56L50 68.5Z'), BOCA = new Path2D('M50 68.5V73M50 73C47 77 43 77 41 75M50 73C53 77 57 77 59 75');
+function cabeca(x, y, tam) {
+  cx.save(); cx.translate(x - tam / 2, y - tam / 2); cx.scale(tam / 100, tam / 100);
+  cx.fillStyle = '#1d1f23'; cx.fill(CAB); cx.fillStyle = '#3a3d43'; cx.fill(ORELHA);
+  cx.fillStyle = '#ffb02e'; cx.fill(OLHOS);
+  cx.fillStyle = '#1d1f23'; cx.beginPath(); cx.ellipse(37.5, 47.5, 1.5, 3.4, -0.5, 0, 7); cx.ellipse(62.5, 47.5, 1.5, 3.4, 0.5, 0, 7); cx.fill();
+  cx.fillStyle = '#6a6e76'; cx.fill(NARIZ); cx.strokeStyle = '#6a6e76'; cx.lineWidth = 1.8; cx.lineCap = 'round'; cx.stroke(BOCA);
   cx.restore();
+}
+function pantera(p, ang) {
+  const [x, y] = p;
+  cx.save(); cx.translate(x, y); cx.rotate(ang);
+  const g = cx.createRadialGradient(0, 0, 12, 0, 0, 70); g.addColorStop(0, 'rgba(240,138,0,.42)'); g.addColorStop(1, 'rgba(240,138,0,0)');
+  cx.fillStyle = g; cx.beginPath(); cx.moveTo(0, 0); cx.arc(0, 0, 70, -Math.PI / 2 - 0.45, -Math.PI / 2 + 0.45); cx.closePath(); cx.fill();
+  cx.restore();
+  cx.save(); cx.shadowColor = 'rgba(0,0,0,.28)'; cx.shadowBlur = 10; cx.shadowOffsetY = 2;
+  cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(x, y, 23, 0, 7); cx.fill(); cx.restore();
+  cx.save(); cx.translate(x, y); cx.rotate(ang);
+  cx.fillStyle = '#f08a00'; cx.beginPath(); cx.moveTo(0, -32); cx.lineTo(7, -22); cx.lineTo(-7, -22); cx.closePath(); cx.fill();
+  cx.restore();
+  cabeca(x, y + 1, 38);
 }
 
 // ---------- movimento suave ----------
