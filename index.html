@@ -311,11 +311,12 @@ function calcular(silencioso) {
   const salvo = q => lugares().find(([, p]) => p && Rotas.metros(p, q) < 200);
   const daqui = salvo(de), praLa = salvo(destino);
   if (daqui && praLa && daqui !== praLa && !navegando) {
-    rota = Rotas.rota(G, daqui[1], praLa[1], { garupa });
-    const comMarcas = marcas.length ? Rotas.rota(G, daqui[1], praLa[1], { garupa, marcas }) : rota;
+    const rua = (FIXOS.find(x => x[0] === praLa[0]) || [])[2];
+    rota = Rotas.rota(G, daqui[1], praLa[1], { garupa, rua });
+    const comMarcas = marcas.length ? Rotas.rota(G, daqui[1], praLa[1], { garupa, marcas, rua }) : rota;
     rota.validada = comMarcas && comMarcas.linha.length === rota.linha.length;
     if (!rota.validada) rota = comMarcas;
-  } else rota = Rotas.rota(G, de, destino, { garupa, pico, marcas });
+  } else rota = Rotas.rota(G, de, destino, { garupa, pico, marcas, rua: praLa && (FIXOS.find(x => x[0] === praLa[0]) || [])[2] });
   if (!rota) { folha(el('b', 'Não achei caminho até ' + nomeDestino), acoes(['Fechar', limpar])); return; }
   preparar();
   if (silencioso) return desenhar();
