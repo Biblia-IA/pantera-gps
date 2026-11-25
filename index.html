@@ -62,8 +62,8 @@ svg.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;str
 #chips button.falta i{background:none;border:1px solid var(--mut)}
 
 /* trilho lateral */
-#trilho{position:fixed;right:12px;top:calc(env(safe-area-inset-top) + 134px);z-index:3;display:flex;flex-direction:column;border-radius:12px;overflow:hidden}
-#trilho button{width:46px;height:46px;display:grid;place-items:center;color:var(--tx);transition:background .2s}
+#trilho{position:fixed;right:12px;top:calc(env(safe-area-inset-top) + 122px);z-index:3;display:flex;flex-direction:column;border-radius:12px;overflow:hidden}
+#trilho button{width:44px;height:42px;display:grid;place-items:center;color:var(--tx);transition:background .2s}
 #trilho button:active{background:var(--linha)}
 #trilho button+button{border-top:1px solid var(--linha)}
 #trilho button.ativo{color:var(--prata);background:var(--linha)}
@@ -71,7 +71,7 @@ svg.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;str
 body.nav #bTema{display:none}
 
 /* folha de baixo */
-#folha{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 8px);border-radius:18px;padding:6px 16px 16px;max-height:44vh;z-index:2;overflow:auto;background-image:linear-gradient(var(--grade) 1px,transparent 1px),linear-gradient(90deg,var(--grade) 1px,transparent 1px);background-size:32px 32px}
+#folha{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 8px);border-radius:18px;padding:6px 16px 16px;max-height:40vh;z-index:2;overflow:auto}
 #folha:empty{display:none}
 #folha.entra{animation:subir .5s var(--curva)}
 @keyframes subir{from{transform:translateY(28px);opacity:0}}
