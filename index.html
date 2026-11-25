@@ -299,10 +299,21 @@ $('#busca').oninput = e => {
 };
 
 // ---------- rota ----------
-function irPara(nome, p) { destino = p; nomeDestino = nome; calcular(); }
+let volta = false;
+function irPara(nome, p) { volta = false; destino = p; nomeDestino = nome; calcular(); }
+// troca saída e chegada (ida vira volta)
+function inverter() {
+  const saida = (volta && origemManual) || eu || origemManual;
+  if (!saida || !destino) return;
+  const lugar = lugares().find(([, p]) => p && Rotas.metros(p, saida) < 200);
+  const novoDestino = lugar ? lugar[1] : saida;
+  origemManual = destino; volta = true; destino = novoDestino;
+  nomeDestino = lugar ? lugar[0] : 'Ponto de saída';
+  calcular();
+}
 const km = m => m < 950 ? Math.round(m / 10) * 10 + ' m' : (m / 1000).toFixed(1).replace('.', ',') + ' km';
 function calcular(silencioso) {
-  const de = eu || origemManual;
+  const de = (volta && origemManual) || eu || origemManual;
   if (!destino) return;
   if (!de) { ligarGps(); folha(el('b', 'De onde você sai?'), el('p', 'Libere a localização ou toque no mapa e escolha "Sair daqui".'), acoes(['Fechar', () => folha()])); desenhar(); return; }
   const h = new Date().getHours() + new Date().getMinutes() / 60;
@@ -338,7 +349,7 @@ function calcular(silencioso) {
   if (!rota.validada) for (const [n, m] of Object.entries(rota.duvidas)) aviso(`Mão não confirmada no mapa: ${n} (${km(m)}). Confira a placa`);
   if (!rota.validada) aviso('A navegação é feita pelo Google Maps, que respeita a mão das ruas. Este app escolhe o caminho longe das avenidas.', true);
   if (pico) aviso('Horário de pico: priorizei ruas mais calmas', true);
-  folha(el('b', nomeDestino), num, ...avisos, (rota.validada ? acoes(['Navegar no app', comecar, 'pri'], ['Google Maps', abrirGoogle], botaoGarupa(), ['Fechar', limpar]) : acoes(['Navegar pelo Google Maps', abrirGoogle, 'pri'], botaoGarupa(), ['Fechar', limpar])));
+  folha(el('b', nomeDestino), num, ...avisos, (rota.validada ? acoes(['Navegar no app', comecar, 'pri'], ['Google Maps', abrirGoogle], ['⇄ Volta', inverter], botaoGarupa(), ['Fechar', limpar]) : acoes(['Navegar pelo Google Maps', abrirGoogle, 'pri'], ['⇄ Volta', inverter], botaoGarupa(), ['Fechar', limpar])));
   enquadrar();
 }
 // o Google respeita a mão das ruas; as paradas seguram ele no nosso caminho (longe das avenidas)
@@ -358,7 +369,7 @@ function enquadrar() {
   cam.y = (Math.max(...ys) + Math.min(...ys)) / 2 + (H * 0.1) / cam.z;
   desenhar();
 }
-function limpar() { rota = destino = null; parar(); folha(); desenhar(); }
+function limpar() { volta = false; rota = destino = null; parar(); folha(); desenhar(); }
 
 // ---------- navegação ----------
 let manobras = [], acum = [], trava = null, fora = 0, simulando = null;
