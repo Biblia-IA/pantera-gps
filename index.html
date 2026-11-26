@@ -68,6 +68,12 @@ svg.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;str
 #trilho button+button{border-top:1px solid var(--linha)}
 #trilho button.ativo{color:var(--prata);background:var(--linha)}
 #bNorte svg{transition:transform .3s var(--curva)}
+/* recentralizar: aparece quando o mapa saiu da seta (igual o Google Maps) */
+#bCentro{position:fixed;left:12px;bottom:120px;z-index:3;height:50px;padding:0 20px 0 16px;border-radius:25px;display:flex;align-items:center;gap:10px;background:var(--botao);color:var(--botaoTx);box-shadow:var(--sombra);font:400 11px Michroma,sans-serif;letter-spacing:.16em;text-transform:uppercase;animation:surgir .3s var(--curva)}
+#bCentro[hidden]{display:none}
+#bCentro:active{transform:scale(.95)}
+#bCentro svg{width:20px;height:20px}
+@keyframes surgir{from{transform:translateY(12px) scale(.9);opacity:0}}
 body.nav #bTema{display:none}
 
 /* folha de baixo */
@@ -180,6 +186,7 @@ body.nav #gps{bottom:auto;top:calc(env(safe-area-inset-top) + 104px)}
   <button id="bTema" aria-label="Alternar claro e escuro"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/></svg></button>
 </nav>
 
+<button id="bCentro" aria-label="Recentralizar" hidden><svg viewBox="0 0 24 24"><path d="M12 2 20 21 12 16 4 21Z" fill="currentColor"/></svg>Recentralizar</button>
 <section id="folha" class="placa"></section>
 
 <script src="cadeado.js"></script>
@@ -272,6 +279,8 @@ function pintar() {
   pedido = false;
   $('#bVolta').hidden = !destino;
   $('#bMarcas').hidden = !marcas.length || navegando;
+  const bc = $('#bCentro'), fl = $('#folha'); bc.hidden = !(navegando && eu && !seguir);
+  if (!bc.hidden) bc.style.bottom = (fl.offsetHeight ? innerHeight - fl.getBoundingClientRect().top + 10 : 20) + 'px';
   $('#bNorte svg').style.transform = 'rotate(' + cam.r + 'rad)'; $('#bNorte').classList.toggle('ativo', modo === 'direcao');
   cx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
   cx.fillStyle = PAL.fundo; cx.fillRect(0, 0, W, H);
@@ -444,7 +453,7 @@ function recentrar() {
   if (!eu) return;
   const id = ++recentrando, [x, y] = xy(visto || eu);
   modo = 'direcao';
-  voar({ x, y, r: -rumoVisto * Math.PI / 180, z: navegando ? Math.max(cam.z, 1.1) : Math.max(cam.z, 0.7) }, 450);
+  voar({ x, y, r: -rumoVisto * Math.PI / 180, z: navegando ? 1.4 : Math.max(cam.z, 0.7) }, 450);
   setTimeout(() => { if (id === recentrando) { seguir = true; desenhar(); } }, 470);
 }
 function agendarVolta() { clearTimeout(voltaT); if (navegando) voltaT = setTimeout(() => { if (navegando && !dedos.size && !seguir) recentrar(); }, 5000); }
@@ -469,6 +478,7 @@ $('#bNorte').onclick = () => {
 $('#bMais').onclick = () => voar({ z: limZ(cam.z * 1.7) }, 320);
 $('#bMenos').onclick = () => voar({ z: limZ(cam.z / 1.7) }, 320);
 $('#bEu').onclick = () => { ligarGps(); clearTimeout(voltaT); if (eu) recentrar(); };
+$('#bCentro').onclick = () => { clearTimeout(voltaT); recentrar(); };
 // as marcas ficam só neste celular; este botão monta um texto (rua, hora, rumo, link do mapa) pra ele colar no chat do Ultron
 const RUMOS = ['norte', 'nordeste', 'leste', 'sudeste', 'sul', 'sudoeste', 'oeste', 'noroeste'];
 function ruaPerto(p) { let m = 1e9, n = ''; for (const t of G.trechos) { if (!t.nome) continue; for (let i = 1; i < t.g.length; i++) { const d = Rotas.distSeg(p, t.g[i - 1], t.g[i]); if (d < m) { m = d; n = t.nome; } } } return n || 'rua sem nome'; }
