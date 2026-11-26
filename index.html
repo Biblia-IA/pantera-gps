@@ -176,6 +176,7 @@ body.nav #gps{bottom:auto;top:calc(env(safe-area-inset-top) + 104px)}
   <button id="bMais" aria-label="Aproximar"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
   <button id="bMenos" aria-label="Afastar"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
   <button id="bEu" aria-label="Minha posição"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><path d="M12 11v2" stroke-width="2.5"/></svg></button>
+  <button id="bMarcas" aria-label="Mandar as marcas pro Ultron" hidden><svg class="ic" viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 12v8h14v-8"/></svg></button>
   <button id="bTema" aria-label="Alternar claro e escuro"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/></svg></button>
 </nav>
 
@@ -270,6 +271,7 @@ const FONTE = (peso, tam) => `${peso} ${tam}px Geist,-apple-system,system-ui,san
 function pintar() {
   pedido = false;
   $('#bVolta').hidden = !destino;
+  $('#bMarcas').hidden = !marcas.length || navegando;
   $('#bNorte svg').style.transform = 'rotate(' + cam.r + 'rad)'; $('#bNorte').classList.toggle('ativo', modo === 'direcao');
   cx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
   cx.fillStyle = PAL.fundo; cx.fillRect(0, 0, W, H);
@@ -454,7 +456,27 @@ $('#bNorte').onclick = () => {
 $('#bMais').onclick = () => voar({ z: limZ(cam.z * 1.7) }, 320);
 $('#bMenos').onclick = () => voar({ z: limZ(cam.z / 1.7) }, 320);
 $('#bEu').onclick = () => { ligarGps(); if (eu) { const [x, y] = xy(eu); seguir = true; voar({ x, y, z: Math.max(cam.z, 0.7) }); } };
-$('#bTema').onclick = () => { tema = tema === 'escuro' ? 'claro' : 'escuro'; gravar('tema2', tema); aplicarTema(); };
+// as marcas ficam só neste celular; este botão monta um texto (rua, hora, rumo, link do mapa) pra ele colar no chat do Ultron
+const RUMOS = ['norte', 'nordeste', 'leste', 'sudeste', 'sul', 'sudoeste', 'oeste', 'noroeste'];
+function ruaPerto(p) { let m = 1e9, n = ''; for (const t of G.trechos) { if (!t.nome) continue; for (let i = 1; i < t.g.length; i++) { const d = Rotas.distSeg(p, t.g[i - 1], t.g[i]); if (d < m) { m = d; n = t.nome; } } } return n || 'rua sem nome'; }
+function textoMarcas() {
+  const nome = { buraco: 'BURACO', interditado: 'INTERDITADO', contramao: 'CONTRAMÃO' };
+  return 'Pantera GPS · marcas pro Ultron\n' + marcas.map((m, i) => {
+    const q = m.p[0].toFixed(6) + ',' + m.p[1].toFixed(6);
+    const hora = m.quando ? new Date(m.quando).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'sem hora';
+    const ia = m.rumo != null ? ' · indo pro ' + RUMOS[Math.round(m.rumo / 45) % 8] + ' (' + Math.round(m.rumo) + '°)' : '';
+    return `${i + 1}. ${nome[m.tipo] || m.tipo} · ${ruaPerto(m.p)} · ${hora}${ia}\n   ${q} · https://www.google.com/maps/search/?api=1&query=${q}`;
+  }).join('\n');
+}
+$('#bMarcas').onclick = async () => {
+  const t = textoMarcas();
+  try { if (navigator.share) { await navigator.share({ text: t }); return; } } catch (e) { if (e.name === 'AbortError') return; }
+  let copiou = false; try { await navigator.clipboard.writeText(t); copiou = true; } catch {}
+  const area = el('textarea', t, 'campo'); area.style.height = '160px'; area.style.padding = '10px'; area.style.fontSize = '13px'; area.readOnly = true;
+  folha(titulo('Marcas pro Ultron'), el('p', copiou ? 'Copiado. Cole no chat do Ultron.' : 'Segure no texto, copie tudo e cole no chat do Ultron.', 'sub'), area,
+    acoes(['Apagar todas as marcas', () => { marcas = []; gravar('marcas', marcas); folha(); desenhar(); }], ['Fechar', () => folha()]));
+};
+$('#bTema').onclick =() => { tema = tema === 'escuro' ? 'claro' : 'escuro'; gravar('tema2', tema); aplicarTema(); };
 
 // ================= folha de baixo =================
 const el = (tag, texto, cls) => { const e = document.createElement(tag); if (texto) e.textContent = texto; if (cls) e.className = cls; return e; };
@@ -492,7 +514,7 @@ function salvar(p) {
   folha(titulo('Salvar lugar'), i, acoes(['Salvar', () => { const n = i.value.trim(); if (n) { meus[n] = p; gravar('lugares', meus); chips(); folha(); } }, 'pri'], ['Cancelar', () => folha()]));
   i.focus();
 }
-function marcar(tipo, p) { marcas.push({ tipo, p }); gravar('marcas', marcas); destino ? calcular() : folha(); desenhar(); }
+function marcar(tipo, p) { marcas.push({ tipo, p, quando: Date.now() }); gravar('marcas', marcas); destino ? calcular() : folha(); desenhar(); }
 
 function chips() {
   $('#chips').replaceChildren(...lugares().map(([n, p]) => {
@@ -646,7 +668,9 @@ function andou(p) {
 }
 function marcar2(tipo) {
   const a = (rumo * Math.PI) / 180, d = tipo === 'interditado' ? 25 : 0;
-  marcas.push({ tipo, rumo, p: [eu[0] + d * Math.cos(a) / KY, eu[1] + d * Math.sin(a) / KX] }); gravar('marcas', marcas);
+  marcas.push({ tipo, rumo, quando: Date.now(), p: [eu[0] + d * Math.cos(a) / KY, eu[1] + d * Math.sin(a) / KX] }); gravar('marcas', marcas);
+  const m = $('#manobra'); const antes = m.innerHTML; placaManobra('ok', 'Marcado', ({ buraco: 'Buraco', interditado: 'Interditado', contramao: 'Contramão' })[tipo] + ' salvo neste celular');
+  setTimeout(() => { if (m.innerHTML.includes('Marcado')) m.innerHTML = antes; }, 2500);
   if (tipo !== 'buraco') calcular(true);
   desenhar();
 }
