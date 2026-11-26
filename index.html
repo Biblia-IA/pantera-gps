@@ -438,8 +438,20 @@ cv.addEventListener('pointermove', e => {
   }
   desenhar();
 });
+// navegando, se ele arrastar o mapa, a câmera volta sozinha pra seta depois de 5 s sem tocar (igual o Google Maps)
+let voltaT = 0, recentrando = 0;
+function recentrar() {
+  if (!eu) return;
+  const id = ++recentrando, [x, y] = xy(visto || eu);
+  modo = 'direcao';
+  voar({ x, y, r: -rumoVisto * Math.PI / 180, z: navegando ? Math.max(cam.z, 1.1) : Math.max(cam.z, 0.7) }, 450);
+  setTimeout(() => { if (id === recentrando) { seguir = true; desenhar(); } }, 470);
+}
+function agendarVolta() { clearTimeout(voltaT); if (navegando) voltaT = setTimeout(() => { if (navegando && !dedos.size && !seguir) recentrar(); }, 5000); }
+cv.addEventListener('pointerdown', () => { clearTimeout(voltaT); recentrando++; });
 const solta = e => {
   if (!dedos.delete(e.pointerId)) return; antes = null; angAntes = null;
+  if (!dedos.size) agendarVolta();
   if (e.type === 'pointerup' && !dedos.size && mexeu <= 8 && !navegando) tocou(ll(...noMundo(e.clientX, e.clientY)));
   else if (!dedos.size && mexeu > 8 && mexeu < 99 && e.timeStamp - tAntes < 80 && Math.hypot(...vel) > 0.15) embalar(...vel);
 };
@@ -448,14 +460,15 @@ cv.addEventListener('wheel', e => { e.preventDefault(); zoom(e.deltaY < 0 ? 1.2 
 const limZ = z => Math.max(0.03, Math.min(4, z));
 const zoom = f => { cam.z = limZ(cam.z * f); desenhar(); };
 $('#bVolta').onclick = () => { if (navegando) parar(); inverter(); };
+// padrão: o mapa gira e a seta fica sempre pra cima (direção). Este botão alterna com "norte pra cima".
 $('#bNorte').onclick = () => {
-  if (modo === 'norte' && navegando) modo = 'direcao'; else { modo = 'norte'; voar({ r: 0 }, 420); }
-  if (modo === 'direcao' && eu) { seguir = true; const [x, y] = xy(eu); voar({ x, y, r: -rumo * Math.PI / 180 }, 420); }
-  gravar('modo', modo === 'livre' ? 'norte' : modo); desenhar();
+  if (modo === 'direcao') { modo = 'norte'; recentrando++; voar({ r: 0 }, 420); }
+  else if (eu) recentrar(); else { modo = 'direcao'; voar({ r: -rumoVisto * Math.PI / 180 }, 420); }
+  gravar('modo2', modo === 'livre' ? 'direcao' : modo); desenhar();
 };
 $('#bMais').onclick = () => voar({ z: limZ(cam.z * 1.7) }, 320);
 $('#bMenos').onclick = () => voar({ z: limZ(cam.z / 1.7) }, 320);
-$('#bEu').onclick = () => { ligarGps(); if (eu) { const [x, y] = xy(eu); seguir = true; voar({ x, y, z: Math.max(cam.z, 0.7) }); } };
+$('#bEu').onclick = () => { ligarGps(); clearTimeout(voltaT); if (eu) recentrar(); };
 // as marcas ficam só neste celular; este botão monta um texto (rua, hora, rumo, link do mapa) pra ele colar no chat do Ultron
 const RUMOS = ['norte', 'nordeste', 'leste', 'sudeste', 'sul', 'sudoeste', 'oeste', 'noroeste'];
 function ruaPerto(p) { let m = 1e9, n = ''; for (const t of G.trechos) { if (!t.nome) continue; for (let i = 1; i < t.g.length; i++) { const d = Rotas.distSeg(p, t.g[i - 1], t.g[i]); if (d < m) { m = d; n = t.nome; } } } return n || 'rua sem nome'; }
@@ -675,12 +688,12 @@ function marcar2(tipo) {
   desenhar();
 }
 async function comecar() {
-  parado(); navegando = true; seguir = true; fora = 0; if (modo === 'livre') modo = 'norte'; document.body.classList.add('nav'); cam.z = 1.4;
+  parado(); recentrando++; clearTimeout(voltaT); navegando = true; seguir = true; fora = 0; modo = 'direcao'; document.body.classList.add('nav'); cam.z = 1.4;
   try { trava = await navigator.wakeLock.request('screen'); } catch {}
   if (new URLSearchParams(location.search).has('sim')) simular(); else ligarGps();
   posicao(eu || rota.linha[0], azim(rota.linha[0], rota.linha[1] || rota.linha[0]));
 }
-function parar() { navegando = false; cam.r = 0; document.body.classList.remove('nav'); trava?.release().catch(() => {}); trava = null; clearInterval(simulando); }
+function parar() { navegando = false; clearTimeout(voltaT); if (modo !== 'direcao' || !seguir) cam.r = 0; document.body.classList.remove('nav'); trava?.release().catch(() => {}); trava = null; clearInterval(simulando); }
 document.addEventListener('visibilitychange', async () => { if (navegando && document.visibilityState === 'visible') try { trava = await navigator.wakeLock.request('screen'); } catch {} });
 function simular() {
   let s = 0; clearInterval(simulando);
@@ -692,7 +705,7 @@ function simular() {
 }
 
 // ================= GPS =================
-let vigia = null, ultima = null, precisao = 0, modo = ler('modo', 'norte'), visto = null, rumoVisto = 0, deslize = 0;
+let vigia = null, ultima = null, precisao = 0, modo = ler('modo2', 'direcao'), visto = null, rumoVisto = 0, deslize = 0;
 // a seta desliza de um ponto do GPS ao outro (e a câmera vai junto)
 function posicao(p, direcao) {
   const de = visto || p, rDe = rumoVisto;
