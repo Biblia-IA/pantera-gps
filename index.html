@@ -48,6 +48,14 @@ svg.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;str
 .busca svg{color:var(--aco);flex:none}
 #busca{flex:1;min-width:0;height:100%;outline:0;font-size:16px;font-weight:300;-webkit-user-select:text;user-select:text}
 #busca::placeholder{color:var(--mut)}
+#linhaDe:not([hidden])~.busca #busca::placeholder{color:var(--tx)}
+.busca .rot{flex:none;width:34px;font:400 8.5px Michroma,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--mut)}
+.busca .rot[hidden],#lupa[hidden]{display:none}
+#linhaDe[hidden]{display:none}
+#de{flex:1;min-width:0;height:100%;outline:0;font-size:16px;font-weight:300;-webkit-user-select:text;user-select:text}
+#de::placeholder{color:var(--tx)}
+#deLimpa{flex:none;width:32px;height:32px;display:grid;place-items:center;color:var(--aco)}
+#deLimpa[hidden]{display:none}
 #achados{border-radius:12px;max-height:46vh;overflow:auto}
 #achados:empty{display:none}
 #achados button{display:block;width:100%;text-align:left;padding:11px 14px;border-bottom:1px solid var(--linha)}
@@ -63,8 +71,9 @@ svg.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;str
 
 /* trilho lateral */
 #trilho{position:fixed;right:12px;top:calc(env(safe-area-inset-top) + 122px);z-index:3;display:flex;flex-direction:column;border-radius:12px;overflow:hidden}
-#trilho button{width:44px;height:42px;display:grid;place-items:center;color:var(--tx);transition:background .2s}
+#trilho button{width:48px;height:46px;display:grid;place-items:center;color:var(--tx);transition:background .2s}
 #trilho button:active{background:var(--linha)}
+#trilho button[hidden]{display:none}
 #trilho button+button{border-top:1px solid var(--linha)}
 #trilho button.ativo{color:var(--prata);background:var(--linha)}
 #bNorte svg{transition:transform .3s var(--curva)}
@@ -74,7 +83,9 @@ svg.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;str
 #bCentro:active{transform:scale(.95)}
 #bCentro svg{width:20px;height:20px}
 @keyframes surgir{from{transform:translateY(12px) scale(.9);opacity:0}}
-body.nav #bTema{display:none}
+body.nav #trilho button:not(#bNorte):not(#bSom){display:none}
+body.nav #trilho button{width:54px;height:54px}
+body.nav #trilho{border-radius:16px}
 
 /* folha de baixo */
 #folha{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 8px);border-radius:18px;padding:6px 16px 16px;max-height:40vh;z-index:2;overflow:auto}
@@ -83,7 +94,15 @@ body.nav #bTema{display:none}
 @keyframes subir{from{transform:translateY(28px);opacity:0}}
 .alca{display:block;width:100%;height:22px;position:relative}
 .alca::after{content:"";position:absolute;left:50%;top:8px;width:34px;height:3px;margin-left:-17px;border-radius:2px;background:var(--linha2)}
-#folha.mini>:not(.alca):not(.tit){display:none}
+#folha.mini>:not(.alca):not(.tit):not(.navtopo){display:none}
+.navtopo{display:flex;align-items:center;gap:14px;padding:0 0 2px}
+.navtopo .sair{width:54px;height:54px;flex:none;border-radius:50%;border:1px solid var(--linha2);display:grid;place-items:center;color:var(--tx);transition:transform .2s var(--curva),background .2s}
+.navtopo .sair:active{transform:scale(.92);background:var(--linha)}
+.navtopo .sair svg{width:22px;height:22px;stroke-width:1.8}
+.navtopo .tit{font-size:24px;letter-spacing:.06em;padding:0}
+.navtopo .sub{display:block;margin-top:2px;font-size:14px}
+.acoes.tres{grid-template-columns:repeat(3,1fr);margin-top:12px}
+.acoes.tres button{height:46px;font-size:8.5px}
 .tit{font:400 13px/1.5 Michroma,sans-serif;letter-spacing:.12em;text-transform:uppercase;display:block;padding-top:2px}
 .sub{color:var(--mut);font-size:14px;margin-top:4px}
 .num{display:grid;grid-template-columns:repeat(3,1fr);margin:14px 0 6px;border-top:1px solid var(--linha);border-bottom:1px solid var(--linha)}
@@ -91,6 +110,7 @@ body.nav #bTema{display:none}
 .num b{display:block;font:400 17px Michroma,sans-serif;letter-spacing:.04em;font-variant-numeric:tabular-nums}
 .num span{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--mut)}
 .aviso{display:flex;gap:10px;align-items:flex-start;padding:8px 0;font-size:13.5px;border-bottom:1px solid var(--linha)}
+.aviso[hidden]{display:none}
 .aviso svg{flex:none;width:15px;height:15px;margin-top:2px;color:var(--aco)}
 .aviso.alerta{color:var(--prata);font-weight:400}.aviso.alerta svg{color:var(--prata)}
 .legenda{display:flex;gap:16px;flex-wrap:wrap;padding:9px 0 2px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut)}
@@ -121,6 +141,13 @@ body.nav #manobra{display:flex;animation:descer .45s var(--curva)}
 #gps.ruim i{background:none;border:1px solid var(--prata);animation:pisca 1.2s infinite}
 @keyframes pisca{50%{opacity:.2}}
 body.nav #gps{bottom:auto;top:calc(env(safe-area-inset-top) + 104px)}
+/* chuva: etiqueta pequena embaixo do GPS durante a navegação */
+#chuva{position:fixed;left:12px;top:calc(env(safe-area-inset-top) + 140px);height:28px;padding:0 11px;border-radius:7px;display:flex;align-items:center;gap:7px;font:400 8.5px Michroma,sans-serif;letter-spacing:.14em;text-transform:uppercase;z-index:2}
+#chuva[hidden]{display:none}
+#chuva svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.5}
+#chuva.vem{color:var(--prata);border-color:var(--prata)}
+#bSom .mudo{display:none}#bSom.mudo .mudo{display:inline}#bSom.mudo .onda{display:none}
+#bSom[hidden],#bCorridas[hidden]{display:none}
 
 /* cadeado */
 #cadeado{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:32px;
@@ -152,6 +179,7 @@ body.nav #gps{bottom:auto;top:calc(env(safe-area-inset-top) + 104px)}
 </style>
 </head>
 <body>
+<script>self.VERSAO='pantera-v29';(function(){function checar(){fetch('versao.txt?x='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(v){v=(v||'').trim();if(!v||v===self.VERSAO)return;var k='tentou-'+v;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){}location.replace(location.pathname+'?v='+v.replace('pantera-',''))}).catch(function(){})}checar();document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')checar()})})();</script>
 <canvas id="c"></canvas>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -168,13 +196,15 @@ body.nav #gps{bottom:auto;top:calc(env(safe-area-inset-top) + 104px)}
 
 <header id="topo">
   <div class="marca"><svg class="so-escuro"><use href="#p7"/></svg><svg class="so-claro"><use href="#p7d"/></svg><b class="cromo">PANTERA</b><span>GPS · BAURU</span></div>
-  <label class="busca placa"><svg class="ic" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg><input id="busca" placeholder="Rua, lugar ou coordenada" autocomplete="off"></label>
+  <label class="busca placa" id="linhaDe" hidden><span class="rot">De</span><input id="de" placeholder="Minha localização" autocomplete="off"><button id="deLimpa" aria-label="Sair da minha localização" hidden><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button></label>
+  <label class="busca placa"><span class="rot" id="rotPara" hidden>Para</span><svg class="ic" id="lupa" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg><input id="busca" placeholder="Rua, lugar ou coordenada" autocomplete="off"></label>
   <div id="achados" class="placa"></div>
   <div id="chips"></div>
 </header>
 
 <div id="manobra" class="placa"></div>
 <div id="gps" class="placa" hidden></div>
+<div id="chuva" class="placa" hidden></div>
 
 <nav id="trilho" class="placa">
   <button id="bVolta" aria-label="Fazer a volta" hidden><svg class="ic" viewBox="0 0 24 24"><path d="M4 8h14M14 4l4 4-4 4M20 16H6M10 12l-4 4 4 4"/></svg></button>
@@ -182,6 +212,8 @@ body.nav #gps{bottom:auto;top:calc(env(safe-area-inset-top) + 104px)}
   <button id="bMais" aria-label="Aproximar"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
   <button id="bMenos" aria-label="Afastar"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
   <button id="bEu" aria-label="Minha posição"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><path d="M12 11v2" stroke-width="2.5"/></svg></button>
+  <button id="bSom" aria-label="Voz ligada ou desligada" hidden><svg class="ic" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4Z"/><path class="onda" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="mudo" d="m16 9 6 6M22 9l-6 6"/></svg></button>
+  <button id="bCorridas" aria-label="Corridas gravadas" hidden><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg></button>
   <button id="bMarcas" aria-label="Mandar as marcas pro Ultron" hidden><svg class="ic" viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 12v8h14v-8"/></svg></button>
   <button id="bTema" aria-label="Alternar claro e escuro"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/></svg></button>
 </nav>
@@ -189,9 +221,9 @@ body.nav #gps{bottom:auto;top:calc(env(safe-area-inset-top) + 104px)}
 <button id="bCentro" aria-label="Recentralizar" hidden><svg viewBox="0 0 24 24"><path d="M12 2 20 21 12 16 4 21Z" fill="currentColor"/></svg>Recentralizar</button>
 <section id="folha" class="placa"></section>
 
-<script src="cadeado.js"></script>
-<script src="dados.js"></script>
-<script src="rotas.js"></script>
+<script src="cadeado.js?v=v29"></script>
+<script src="dados.js?v=v29"></script>
+<script src="rotas.js?v=v29"></script>
 <script>
 'use strict';
 const $ = s => document.querySelector(s);
@@ -231,6 +263,7 @@ function aplicarTema() {
 // os destinos não ficam neste arquivo: vêm cifrados (site) e abrem com o PIN
 let FIXOS = self.FIXOS || [['Casa', null], ['Casa da sogra', null]];
 let meus = ler('lugares', {}), marcas = ler('marcas', []), garupa = ler('garupa', false);
+let voz = ler('voz', true), corridas = ler('corridas', []);
 const lugares = () => { const m = new Map(FIXOS); for (const [n, p] of Object.entries(meus)) m.set(n, p); return [...m]; };
 let eu = null, rumo = 0, origemManual = null, destino = null, nomeDestino = '', rota = null, navegando = false, seguir = false, salvarComo = null;
 
@@ -259,7 +292,8 @@ const T = G.trechos.map(t => {
 const cam = { x: 0, y: 0, z: 0.12, r: 0 };
 let W, H, pedido = false;
 const desenhar = () => { if (!pedido) { pedido = true; requestAnimationFrame(pintar); } };
-function ajustar() { W = innerWidth; H = innerHeight; cv.width = W * devicePixelRatio; cv.height = H * devicePixelRatio; desenhar(); }
+const DPR = Math.min(2, devicePixelRatio || 1); // 3x no iPhone pesa e não aparece diferença no mapa
+function ajustar() { W = innerWidth; H = innerHeight; cv.width = W * DPR; cv.height = H * DPR; uiAntes = 0; desenhar(); }
 const centroY = () => navegando && seguir ? H * 0.68 : H / 2;
 function naTela(w) {
   const dx = (w[0] - cam.x) * cam.z, dy = (w[1] - cam.y) * cam.z, c = Math.cos(cam.r), s = Math.sin(cam.r);
@@ -275,14 +309,29 @@ function traco(pts, cor, larg, tracejado) {
 }
 const FONTE = (peso, tam) => `${peso} ${tam}px Geist,-apple-system,system-ui,sans-serif`;
 
-function pintar() {
+let uiAntes = 0;
+function pintar(t) {
   pedido = false;
+  if (!t || t - uiAntes > 150) { uiAntes = t || 0; ui(); }
+  $('#bNorte svg').style.transform = 'rotate(' + cam.r + 'rad)';
+  desenharMapa();
+}
+function ui() {
   $('#bVolta').hidden = !destino;
   $('#bMarcas').hidden = !marcas.length || navegando;
+  // com destino escolhido aparece a linha "De" (partida) em cima do "Para", e o trilho desce junto
+  const comDe = !!destino && !navegando;
+  if ($('#linhaDe').hidden === comDe) { $('#linhaDe').hidden = !comDe; $('#rotPara').hidden = !comDe; $('#lupa').hidden = comDe; mostrarPartida(); }
+  const ph = comDe ? nomeDestino : 'Rua, lugar ou coordenada'; if ($('#busca').placeholder !== ph) $('#busca').placeholder = ph;
+  $('#trilho').style.top = (navegando ? 122 : Math.max(122, $('#chips').getBoundingClientRect().bottom + 10)) + 'px';
+  $('#bSom').hidden = !navegando; $('#bSom').classList.toggle('mudo', !voz);
+  $('#bCorridas').hidden = navegando || !corridas.length;
   const bc = $('#bCentro'), fl = $('#folha'); bc.hidden = !(navegando && eu && !seguir);
   if (!bc.hidden) bc.style.bottom = (fl.offsetHeight ? innerHeight - fl.getBoundingClientRect().top + 10 : 20) + 'px';
-  $('#bNorte svg').style.transform = 'rotate(' + cam.r + 'rad)'; $('#bNorte').classList.toggle('ativo', modo === 'direcao');
-  cx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  $('#bNorte').classList.toggle('ativo', modo === 'direcao');
+}
+function desenharMapa() {
+  cx.setTransform(DPR, 0, 0, DPR, 0, 0);
   cx.fillStyle = PAL.fundo; cx.fillRect(0, 0, W, H);
   cx.lineCap = cx.lineJoin = 'round';
   const raio = Math.hypot(W, H) / cam.z, z = cam.z, esc = Math.max(0.3, Math.min(2.4, z * 1.6));
@@ -331,7 +380,7 @@ function pintar() {
     }
   }
   for (const m of marcas) sinal(naTela(xy(m.p)), m.tipo);
-  if (origemManual && !eu) losango(naTela(xy(origemManual)), 6, PAL.lugar, true);
+  if (origemManual && (origemFixa || !eu)) losango(naTela(xy(origemManual)), 6, PAL.lugar, true);
   // destinos salvos: losango de aço + nome em maiúsculas espaçadas
   cx.font = FONTE(500, 9.5); cx.textAlign = 'left';
   for (const [n, p] of lugares()) if (p) {
@@ -454,7 +503,7 @@ function recentrar() {
   const id = ++recentrando, [x, y] = xy(visto || eu);
   modo = 'direcao';
   voar({ x, y, r: -rumoVisto * Math.PI / 180, z: navegando ? 1.4 : Math.max(cam.z, 0.7) }, 450);
-  setTimeout(() => { if (id === recentrando) { seguir = true; desenhar(); } }, 470);
+  setTimeout(() => { if (id === recentrando) { seguir = true; rodar(); } }, 470);
 }
 function agendarVolta() { clearTimeout(voltaT); if (navegando) voltaT = setTimeout(() => { if (navegando && !dedos.size && !seguir) recentrar(); }, 5000); }
 cv.addEventListener('pointerdown', () => { clearTimeout(voltaT); recentrando++; });
@@ -526,7 +575,7 @@ function tocou(p) {
   if (salvarComo) { meus[salvarComo] = p; gravar('lugares', meus); const n = salvarComo; salvarComo = null; chips(); irPara(n, p); return; }
   folha(titulo('Ponto no mapa'), acoes(
     ['Ir até aqui', () => irPara('Ponto no mapa', p), 'pri'],
-    ['Sair daqui', () => { origemManual = p; eu = null; desligarGps(); destino ? calcular() : (folha(), desenhar()); }],
+    ['Sair daqui', () => { folha(); escolherPartida('Ponto no mapa', p); }],
     ['Salvar lugar', () => salvar(p)],
     ['Buraco', () => marcar('buraco', p)], ['Interditado', () => marcar('interditado', p)],
     ['Apagar marca', () => { marcas = marcas.filter(m => Rotas.metros(m.p, p) > 40); gravar('marcas', marcas); destino ? calcular() : folha(); desenhar(); }],
@@ -562,36 +611,53 @@ function abrirAchado(n, p) {
   folha(titulo(n), el('p', 'Confira o ponto no mapa.', 'sub'), acoes(['Ir até aqui', () => irPara(n, p), 'pri'], ['Salvar lugar', () => salvar(p)], ['Fechar', limpar]));
   desenhar();
 }
-$('#busca').oninput = e => {
-  const bruto = e.target.value.trim(), q = sem(bruto);
+// a mesma busca serve pro destino (Para) e pra partida (De)
+function achar(bruto) {
+  const q = sem(bruto);
   const co = bruto.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || bruto.match(/(-2[23]\.\d{3,})[^\d-]+(-4[89]\.\d{3,})/);
-  let achou = [];
-  if (co) achou = [['Ponto colado', [+co[1], +co[2]], 'tocar para abrir']];
-  else if (q.length >= 3) {
-    const palavras = q.split(/\s+/), bate = n => palavras.every(w => sem(n).includes(w));
-    achou = [
-      ...lugares().filter(([n, p]) => p && bate(n)).map(([n, p]) => [n, p, 'meus lugares']),
-      ...LUGARES.filter(([n]) => bate(n)).slice(0, 8).map(([n, p, r]) => [n, p, r || 'lugar']),
-      ...RUAS.filter(bate).slice(0, 6).map(n => { const g = G.trechos.filter(t => t.nome === n).flatMap(t => t.g); return [n, g[g.length >> 1], 'rua']; })];
-    if (!achou.length) achou = [['Não achei "' + bruto + '"', null, 'No Google Maps, segure em cima do lugar, copie a coordenada e cole aqui']];
-  }
-  $('#achados').replaceChildren(...achou.slice(0, 10).map(([n, p, extra]) => { const b = el('button', n); b.append(el('small', extra)); b.onclick = () => p && abrirAchado(n, p); return b; }));
-};
+  if (co) return [['Ponto colado', [+co[1], +co[2]], 'tocar para abrir']];
+  if (q.length < 3) return [];
+  const palavras = q.split(/\s+/), bate = n => palavras.every(w => sem(n).includes(w));
+  const achou = [
+    ...lugares().filter(([n, p]) => p && bate(n)).map(([n, p]) => [n, p, 'meus lugares']),
+    ...LUGARES.filter(([n]) => bate(n)).slice(0, 8).map(([n, p, r]) => [n, p, r || 'lugar']),
+    ...RUAS.filter(bate).slice(0, 6).map(n => { const g = G.trechos.filter(t => t.nome === n).flatMap(t => t.g); return [n, g[g.length >> 1], 'rua']; })];
+  return achou.length ? achou : [['Não achei "' + bruto + '"', null, 'No Google Maps, segure em cima do lugar, copie a coordenada e cole aqui']];
+}
+function listar(achou, escolher) {
+  $('#achados').replaceChildren(...achou.slice(0, 10).map(([n, p, extra]) => { const b = el('button', n); b.append(el('small', extra)); b.onclick = () => p && escolher(n, p); return b; }));
+}
+$('#busca').oninput = e => listar(achar(e.target.value.trim()), abrirAchado);
+// ponto de partida: vazio = minha localização (GPS)
+$('#de').onfocus = () => { $('#de').select(); listar([['Minha localização', eu || [0, 0], 'GPS'], ...lugares().filter(([, p]) => p).map(([n, p]) => [n, p, 'meus lugares'])], escolherPartida); };
+$('#de').oninput = e => { const v = e.target.value.trim(); listar(v ? achar(v) : [['Minha localização', eu || [0, 0], 'GPS']], escolherPartida); };
+$('#de').onblur = () => setTimeout(() => { if (document.activeElement !== $('#busca')) $('#achados').replaceChildren(); mostrarPartida(); }, 200);
+$('#deLimpa').onclick = e => { e.preventDefault(); escolherPartida('Minha localização'); };
+function escolherPartida(n, p) {
+  $('#achados').replaceChildren(); $('#de').blur();
+  if (n === 'Minha localização') { origemFixa = false; nomeOrigem = ''; ligarGps(); }
+  else { origemFixa = true; origemManual = p; nomeOrigem = n; }
+  mostrarPartida(); if (destino) calcular(); else desenhar();
+}
+function mostrarPartida() { $('#de').value = origemFixa ? nomeOrigem : ''; $('#deLimpa').hidden = !origemFixa; }
 
 // ================= rota =================
-let volta = false;
-function irPara(nome, p) { volta = false; destino = p; nomeDestino = nome; calcular(); }
+let origemFixa = false, nomeOrigem = '';
+const deOnde = () => origemFixa ? origemManual : (eu || origemManual);
+function irPara(nome, p) { destino = p; nomeDestino = nome; calcular(); }
+// troca partida e destino (igual a setinha do Google Maps)
 function inverter() {
-  const saida = (volta && origemManual) || eu || origemManual;
+  const saida = deOnde();
   if (!saida || !destino) return;
   const lugar = lugares().find(([, p]) => p && Rotas.metros(p, saida) < 200);
-  origemManual = destino; volta = true; destino = lugar ? lugar[1] : saida;
-  nomeDestino = lugar ? lugar[0] : 'Ponto de saída';
-  calcular();
+  const nomeSaida = origemFixa ? nomeOrigem : (lugar ? lugar[0] : 'Minha localização');
+  origemManual = destino; nomeOrigem = nomeDestino; origemFixa = true;
+  destino = saida; nomeDestino = nomeSaida;
+  mostrarPartida(); calcular();
 }
 const km = m => m < 950 ? Math.round(m / 10) * 10 + ' m' : (m / 1000).toFixed(1).replace('.', ',') + ' km';
 function calcular(silencioso) {
-  const de = (volta && origemManual) || eu || origemManual;
+  const de = deOnde();
   if (!destino) return;
   if (!de) { ligarGps(); folha(titulo('De onde você sai?'), el('p', 'Libere a localização ou toque no mapa e escolha "Sair daqui".', 'sub'), acoes(['Fechar', () => folha()])); desenhar(); return; }
   const h = new Date().getHours() + new Date().getMinutes() / 60;
@@ -626,11 +692,12 @@ function calcular(silencioso) {
   if (!rota.validada) for (const [n, m] of Object.entries(rota.duvidas)) aviso(`Mão não confirmada no mapa: ${n} (${km(m)}). Confira a placa`, 'alerta');
   if (!rota.validada) aviso('Na dúvida da mão, o botão Google Maps abre este mesmo caminho por lá.', 'info');
   if (pico) aviso('Horário de pico: priorizei ruas mais calmas', 'info');
+  const ca = el('div', '', 'aviso info'); ca.id = 'chuvaAviso'; ca.hidden = true; avisos.unshift(ca);
   const leg = el('div', '', 'legenda'); leg.innerHTML = '<span><i></i>Rota</span><span><i class="tr"></i>Avenida que você evita</span>';
   // Navegar aparece sempre; quando a rota não foi conferida no Google, o aviso de cima diz pra olhar as placas
   folha(titulo(nomeDestino), num, ...avisos, leg,
     acoes(['Navegar', comecar, 'pri'], ['Google Maps', abrirGoogle], ['Fazer a volta', inverter], botaoGarupa(), ['Fechar', limpar]));
-  enquadrar();
+  enquadrar(); buscarChuva(rota.linha[rota.linha.length >> 1]); mostrarChuva();
 }
 // o Google respeita a mão das ruas; as paradas seguram ele no nosso caminho
 function abrirGoogle() {
@@ -647,12 +714,13 @@ function enquadrar() {
   const z = Math.min(1.5, (W - 80) / (Math.max(...xs) - Math.min(...xs) + 1), (H * 0.36) / (Math.max(...ys) - Math.min(...ys) + 1));
   voar({ r: 0, z, x: (Math.max(...xs) + Math.min(...xs)) / 2, y: (Math.max(...ys) + Math.min(...ys)) / 2 + (H * 0.1) / z }, 750);
 }
-function limpar() { volta = false; rota = destino = null; parar(); folha(); desenhar(); }
+function limpar() { origemFixa = false; nomeOrigem = ''; mostrarPartida(); rota = destino = null; parar(); folha(); desenhar(); }
 
 // ================= navegação =================
 let manobras = [], acum = [], trava = null, fora = 0, simulando = null;
 const azim = (a, b) => (Math.atan2((b[1] - a[1]) * KX, (b[0] - a[0]) * KY) * 180 / Math.PI + 360) % 360;
 function preparar() {
+  falou = {};
   const l = rota.linha; acum = [0];
   for (let i = 1; i < l.length; i++) acum[i] = acum[i - 1] + Rotas.metros(l[i - 1], l[i]);
   manobras = []; let k = 0;
@@ -684,24 +752,34 @@ function andou(p) {
   // chegou: perto do ponto, ou já na rua do destino a menos de 150 m (não manda dar volta no quarteirão)
   const dFim = Rotas.metros(p, destino || rota.linha.at(-1));
   const naRua = ruaDestino && dFim < 150 && ruaPerto(p) === ruaDestino;
-  if (dFim < 40 || naRua || acum.at(-1) - onde < 25) { if (!avisoAte || performance.now() > avisoAte) placaManobra('chegada', 'Chegou', nomeDestino); folhaNav(0); return; }
+  const andouBastante = onde > acum.at(-1) * 0.5 || acum.at(-1) < 400; // não dá "chegou" logo na saída
+  if (((dFim < 40 || naRua) && andouBastante) || acum.at(-1) - onde < 25) { if (!avisoAte || performance.now() > avisoAte) placaManobra('chegada', 'Chegou', nomeDestino); if (!chegouFalado) { chegouFalado = true; falar('Você chegou. ' + nomeDestino); } folhaNav(0); return; }
   fora = melhor > 40 ? fora + 1 : 0;
   if (fora >= 3) { fora = 0; if (reencontrar(p)) return andou(p); }
   const falta = acum.at(-1) - onde;
   folhaNav(falta);
   if (avisoAte && performance.now() < avisoAte) return; // deixa o "Marcado" / "Recalculando" na tela
   const m = manobras.find(m => m.s > onde + 5) || manobras.at(-1);
+  avisarVoz(m, m.s - onde);
   placaManobra(m.icone, km(m.s - onde), m.acao + (m.rua ? (m.icone === 'chegada' ? ': ' : ' na ') + m.rua : ''));
 }
 // o card de baixo é montado uma vez só; a cada GPS só o texto muda (redesenhar engolia o toque nos botões)
-let navTit = null, avisoAte = 0, ruaDestino = '', rotaBase = null;
+let navTit = null, navSub = null, avisoAte = 0, ruaDestino = '', rotaBase = null;
+function sairNav() { const c = parar(); if (c) mostrarCorrida(c); else calcular(); }
+// card da navegação, igual Google Maps: X pra sair + tempo grande + km e hora de chegada; marcas em 3 botões
 function folhaNav(falta) {
   if (!navTit || !navTit.isConnected) {
-    navTit = titulo('');
-    folha(navTit, el('p', 'até ' + nomeDestino, 'sub'),
-      acoes(['Parar', () => { parar(); calcular(); }], ['Buraco aqui', () => marcar2('buraco')], ['Interditado', () => marcar2('interditado')], ['Contramão aqui', () => marcar2('contramao')]));
+    const topo = el('div', '', 'navtopo'), x = el('button', '', 'sair'), meio = el('div');
+    x.innerHTML = '<svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>'; x.setAttribute('aria-label', 'Sair da navegação'); x.onclick = sairNav;
+    navTit = el('b', '', 'tit cromo'); navSub = el('span', '', 'sub'); meio.append(navTit, navSub); topo.append(x, meio);
+    const m = el('div', '', 'acoes tres');
+    for (const [txt, tipo] of [['Buraco', 'buraco'], ['Interditado', 'interditado'], ['Contramão', 'contramao']]) { const b = el('button', txt); b.onclick = () => marcar2(tipo); m.append(b); }
+    folha(topo, m);
   }
-  navTit.textContent = falta ? `${km(falta)} · ${Math.max(1, Math.round(falta / 1000 / 25 * 60))} min` : 'Chegou';
+  const min = Math.max(1, Math.round(falta / 1000 / 25 * 60));
+  const chega = new Date(Date.now() + min * 6e4).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  navTit.textContent = falta ? min + ' min' : 'Chegou';
+  navSub.textContent = falta ? km(falta) + ' · chega ' + chega : nomeDestino;
 }
 // saiu da rota: acha o caminho de volta pra rota combinada (o ponto da frente que der menos volta) e segue dali
 function reencontrar(p) {
@@ -717,7 +795,7 @@ function reencontrar(p) {
     const total = r.m * 1.15 + (ac.at(-1) - ac[c.k]);
     if (!melhor || total < melhor.total) melhor = { total, r, c };
   }
-  avisoAte = performance.now() + 2500; placaManobra('retorno', 'Recalculando', 'Voltando pra rota combinada');
+  avisoAte = performance.now() + 2500; placaManobra('retorno', 'Recalculando', 'Voltando pra rota combinada'); falar('Recalculando');
   if (!melhor) { calcular(true); return false; }
   const { r, c } = melhor;
   rota = { ...base, linha: [...r.linha, ...l.slice(c.k + (r.linha.length ? 1 : 0))], partes: [...r.partes, ...base.partes.slice(c.j)], m: r.m + ac.at(-1) - ac[c.k] };
@@ -735,38 +813,194 @@ function marcar2(tipo) {
 }
 async function comecar() {
   parado(); recentrando++; clearTimeout(voltaT); rotaBase = rota; navTit = null; avisoAte = 0; navegando = true; seguir = true; fora = 0; modo = 'direcao'; document.body.classList.add('nav'); cam.z = 1.4;
+  falou = {}; chegouFalado = false; falar('Rota iniciada até ' + nomeDestino); iniciarCorrida(); buscarChuva(eu || rota.linha[0]);
   try { trava = await navigator.wakeLock.request('screen'); } catch {}
   if (new URLSearchParams(location.search).has('sim')) simular(); else ligarGps();
   posicao(eu || rota.linha[0], azim(rota.linha[0], rota.linha[1] || rota.linha[0]));
 }
-function parar() { navegando = false; clearTimeout(voltaT); if (modo !== 'direcao' || !seguir) cam.r = 0; document.body.classList.remove('nav'); trava?.release().catch(() => {}); trava = null; clearInterval(simulando); }
+function parar() { const c = navegando ? fecharCorrida() : null; $('#chuva').hidden = true; try { speechSynthesis.cancel(); } catch {} navegando = false; clearTimeout(voltaT); if (modo !== 'direcao' || !seguir) cam.r = 0; document.body.classList.remove('nav'); trava?.release().catch(() => {}); trava = null; clearInterval(simulando); desenhar(); return c; }
 document.addEventListener('visibilitychange', async () => { if (navegando && document.visibilityState === 'visible') try { trava = await navigator.wakeLock.request('screen'); } catch {} });
+let relogioSim = Date.now();
 function simular() {
-  let s = 0; clearInterval(simulando);
+  let s = 0; clearInterval(simulando); relogioSim = Date.now(); if (corrida) corrida.ini = relogioSim;
   simulando = setInterval(() => {
     s += 12; const i = acum.findIndex(a => a >= s); if (i < 1) return clearInterval(simulando);
     const a = rota.linha[i - 1], b = rota.linha[i], f = (s - acum[i - 1]) / (acum[i] - acum[i - 1] || 1);
-    posicao([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f], azim(a, b));
+    // relógio de mentira a 25 km/h, pra gravação do teste sair realista
+    const q = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; pontoCorrida(q, 5, 25 / 3.6, relogioSim += 12 / (25 / 3.6) * 1000);
+    posicao(q, azim(a, b));
   }, 400);
+}
+
+// ================= voz =================
+// usa a voz do próprio iPhone; no iPhone ela só libera depois de um toque, por isso o "Navegar" já fala a primeira frase
+let falou = {}, chegouFalado = false;
+let vozPronta = false;
+function destravarVoz() {
+  if (vozPronta || !('speechSynthesis' in window)) return;
+  try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); vozPronta = true; } catch {}
+}
+document.addEventListener('pointerdown', destravarVoz, true); document.addEventListener('click', destravarVoz, true);
+function falar(txt) {
+  if (!voz || !('speechSynthesis' in window)) return;
+  try {
+    const u = new SpeechSynthesisUtterance(txt); u.lang = 'pt-BR'; u.rate = 1.02; u.volume = 1;
+    const v = speechSynthesis.getVoices().find(v => /pt[-_]BR/i.test(v.lang)); if (v) u.voice = v;
+    if (speechSynthesis.speaking || speechSynthesis.pending) { speechSynthesis.cancel(); setTimeout(() => speechSynthesis.speak(u), 90); }
+    else speechSynthesis.speak(u);
+    if (speechSynthesis.paused) speechSynthesis.resume();
+  } catch {}
+}
+const metrosFala = m => m >= 950 ? (m / 1000).toFixed(1).replace('.', ',') + ' quilômetros' : Math.max(50, Math.round(m / 50) * 50) + ' metros';
+function avisarVoz(m, falta) {
+  const id = manobras.indexOf(m), frase = m.acao + (m.rua ? ' na ' + m.rua : '');
+  if (m.icone === 'chegada') return;
+  if (falta <= 45) { if (!falou[id + 'p']) { falou[id + 'p'] = falou[id + 'l'] = 1; falar('Agora, ' + frase.charAt(0).toLowerCase() + frase.slice(1)); } }
+  else if (falta <= 300 && falta >= 90 && !falou[id + 'l']) { falou[id + 'l'] = 1; falar('Em ' + metrosFala(falta) + ', ' + frase.charAt(0).toLowerCase() + frase.slice(1)); }
+}
+$('#bSom').onclick = () => { voz = !voz; gravar('voz', voz); if (voz) falar('Voz ligada'); else speechSynthesis?.cancel(); desenhar(); };
+
+// ================= chuva (Open-Meteo, grátis e sem chave) =================
+// manda só a coordenada arredondada (~1 km), nunca o endereço exato
+let chuvaDados = null, chuvaEm = 0;
+async function buscarChuva(p) {
+  if (!p || navigator.onLine === false) return;
+  if (chuvaDados && Date.now() - chuvaEm < 10 * 60e3 && Rotas.metros(chuvaDados.p, p) < 4000) return mostrarChuva();
+  try {
+    const u = 'https://api.open-meteo.com/v1/forecast?latitude=' + p[0].toFixed(2) + '&longitude=' + p[1].toFixed(2) +
+      '&minutely_15=precipitation&hourly=precipitation_probability&timezone=America%2FSao_Paulo&forecast_days=2';
+    const r = await fetch(u); if (!r.ok) return;
+    chuvaDados = { p, j: await r.json() }; chuvaEm = Date.now(); mostrarChuva();
+  } catch {}
+}
+const horaDe = s => s.slice(11, 16).replace(':00', 'h').replace(':', 'h');
+function previsaoChuva() {
+  const j = chuvaDados?.j; if (!j?.minutely_15) return null;
+  const agora = new Date(), loc = new Date(agora - agora.getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
+  const t = j.minutely_15.time, mm = j.minutely_15.precipitation;
+  let i = t.findLastIndex(x => x <= loc); if (i < 0) return null;
+  const molha = k => (mm[k] || 0) >= 0.1, fim = Math.min(t.length - 1, i + 12); // próximas 3 h
+  const viagem = rota ? Math.max(5, Math.round(((rota.m - (navegando && acum.length ? 0 : 0)) / 1000) / 25 * 60)) : 30;
+  if (molha(i)) { let k = i; while (k <= fim && molha(k)) k++; return { txt: k > fim ? 'Chovendo nas próximas 3 h' : 'Chuva até ' + horaDe(t[k]), vem: true }; }
+  for (let k = i + 1; k <= fim; k++) if (molha(k)) {
+    const min = Math.max(5, Math.round((new Date(t[k]) - new Date(loc)) / 6e4));
+    return { txt: min < 60 ? 'Chuva em ' + min + ' min' : 'Chuva às ' + horaDe(t[k]), vem: min <= viagem + 15, antes: min <= viagem };
+  }
+  const h = j.hourly, hi = h.time.findLastIndex(x => x <= loc), prob = Math.max(...h.precipitation_probability.slice(hi, hi + 4).filter(x => x != null));
+  if (prob >= 50) return { txt: prob + '% de chance de chuva até ' + horaDe(h.time[Math.min(h.time.length - 1, hi + 3)]), vem: true };
+  return { txt: 'Sem chuva até ' + horaDe(t[fim]), vem: false };
+}
+const ICONE_CHUVA = '<svg viewBox="0 0 24 24"><path d="M7 15a5 5 0 1 1 1.6-9.7A6 6 0 0 1 19 9a4 4 0 0 1-1 6"/><path d="M9 18l-1 3M13 18l-1 3M17 18l-1 3"/></svg>';
+function mostrarChuva() {
+  const pr = previsaoChuva(), pill = $('#chuva'), av = $('#chuvaAviso');
+  pill.hidden = !(pr && navegando);
+  if (pr) { pill.className = 'placa' + (pr.vem ? ' vem' : ''); pill.innerHTML = ICONE_CHUVA; pill.append(pr.txt + (pr.antes ? ' · no caminho' : '')); }
+  if (av && pr) { av.hidden = false; av.className = 'aviso ' + (pr.vem ? 'alerta' : 'info'); av.innerHTML = ICONE_CHUVA.replace('<svg', '<svg class="ic"'); av.append(el('span', pr.txt + (pr.antes ? ': pega no caminho' : pr.vem ? '' : ' (Open-Meteo)'))); }
+}
+setInterval(() => { if (navegando && eu) buscarChuva(eu); }, 60e3);
+
+// ================= corridas gravadas (tempo e km de verdade, pra medir a bateria) =================
+// grava enquanto navega; fica neste celular e vai pro iCloud pelo "Salvar em Arquivos"
+let corrida = ler('corridaAtual', null);
+function iniciarCorrida() {
+  const lugar = !origemFixa && eu && lugares().find(([, p]) => p && Rotas.metros(p, eu) < 200);
+  corrida = { id: Date.now(), ini: Date.now(), fim: Date.now(), de: origemFixa ? nomeOrigem : (lugar ? lugar[0] : 'Minha localização'), para: nomeDestino,
+    garupa, validada: !!rota.validada, planejadoM: Math.round(rota.m), subidaM: rota.ganho, m: 0, movS: 0, maxKmh: 0, pts: [] };
+  gravar('corridaAtual', corrida);
+}
+function pontoCorrida(p, acc, vel, t) {
+  if (!corrida || acc > 35) return;
+  const u = corrida.pts.at(-1);
+  if (u) {
+    const d = Rotas.metros([u[0], u[1]], p), dt = (t - u[2]) / 1000;
+    if (dt <= 0 || (d < 6 && dt < 20)) return; // parado ou tremido do GPS
+    if (d / dt > 16) return; // pulo do GPS (mais de ~58 km/h)
+    corrida.m += d; if (d / dt > 0.8) corrida.movS += dt;
+    if (dt >= 3) corrida.maxKmh = Math.max(corrida.maxKmh, Math.min(60, d / dt * 3.6));
+  }
+  if (vel != null && vel > 0) corrida.maxKmh = Math.max(corrida.maxKmh, Math.min(60, vel * 3.6));
+  corrida.pts.push([+p[0].toFixed(6), +p[1].toFixed(6), t, Math.round(acc)]); corrida.fim = t;
+  gravar('corridaAtual', corrida);
+}
+function fecharCorrida() {
+  if (!corrida) return null;
+  const c = corrida; corrida = null; gravar('corridaAtual', null);
+  if (c.pts.length < 5 || c.m < 200) return null; // teste ou não andou
+  c.m = Math.round(c.m); c.movS = Math.round(c.movS); c.maxKmh = Math.round(c.maxKmh);
+  corridas.push(c); while (corridas.length > 40) corridas.shift(); gravar('corridas', corridas); return c;
+}
+if (corrida) fecharCorrida(); // o app foi fechado no meio de uma corrida: ela entra na lista
+const dataHora = t => new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', '');
+function resumoCorrida(c) {
+  const min = Math.max(1, Math.round((c.fim - c.ini) / 6e4)), mov = Math.round(c.movS / 60), media = c.movS ? c.m / 1000 / (c.movS / 3600) : 0;
+  return `${km(c.m)} · ${min} min (${mov} andando) · média ${Math.round(media)} km/h · máx ${c.maxKmh} km/h`;
+}
+function mostrarCorrida(c) {
+  folha(titulo('Corrida gravada'), el('p', dataHora(c.ini) + ' · ' + c.de + ' → ' + c.para, 'sub'), el('p', resumoCorrida(c), 'sub'),
+    acoes(['Salvar no iCloud', exportarCorridas, 'pri'], ['Ver corridas', listaCorridas], ['Fechar', () => { folha(); desenhar(); }]));
+}
+function listaCorridas() {
+  const novas = corridas.filter(c => !c.salva).length, lista = el('div');
+  for (const c of [...corridas].reverse().slice(0, 12)) {
+    const d = el('div', '', 'aviso ' + (c.salva ? 'info' : 'alerta')); d.innerHTML = ic(c.salva ? 'ok' : 'info');
+    d.append(el('span', dataHora(c.ini) + ' · ' + c.de + ' → ' + c.para + ' · ' + resumoCorrida(c))); lista.append(d);
+  }
+  folha(titulo('Corridas · ' + corridas.length), el('p', novas ? novas + ' ainda não foram pro iCloud' : 'Todas já foram pro iCloud', 'sub'), lista,
+    acoes(['Salvar no iCloud' + (novas ? ' (' + novas + ')' : ''), exportarCorridas, 'pri'],
+      ['Apagar as já salvas', () => { corridas = corridas.filter(c => !c.salva); gravar('corridas', corridas); corridas.length ? listaCorridas() : folha(); desenhar(); }],
+      ['Fechar', () => { folha(); desenhar(); }]));
+}
+$('#bCorridas').onclick = listaCorridas;
+async function exportarCorridas() {
+  const vai = corridas.filter(c => !c.salva).length ? corridas.filter(c => !c.salva) : corridas;
+  if (!vai.length) return;
+  const d = new Date(), nome = 'corridas-pantera-' + new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16).replace('T', '-').replace(':', 'h') + '.json';
+  const arq = new File([JSON.stringify({ app: 'Pantera GPS', gerado: d.toISOString(), corridas: vai })], nome, { type: 'application/json' });
+  const feito = () => { for (const c of vai) c.salva = true; gravar('corridas', corridas); listaCorridas(); };
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [arq] })) { await navigator.share({ files: [arq] }); return feito(); }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(arq); a.download = nome; document.body.append(a); a.click(); a.remove(); feito();
 }
 
 // ================= GPS =================
 let vigia = null, ultima = null, precisao = 0, modo = ler('modo2', 'direcao'), visto = null, rumoVisto = 0, deslize = 0;
-// a seta desliza de um ponto do GPS ao outro (e a câmera vai junto)
+// a seta desliza de um ponto do GPS ao outro em velocidade constante (sem o tranco de frear a cada segundo)
+// e a câmera vai atrás com um amortecimento curto; o giro do mapa é amortecido à parte, mais macio
+let mov = null, laco = 0, tFix = 0, tQuadro = 0;
 function posicao(p, direcao) {
+  const agora = performance.now(), gira = direcao != null && !Number.isNaN(direcao);
   const de = visto || p, rDe = rumoVisto;
   eu = p;
-  if (direcao != null && !Number.isNaN(direcao)) rumo = direcao;
-  const dr = ((rumo - rDe + 540) % 360) - 180, t0 = performance.now(), ms = navegando ? 900 : 350, id = ++deslize;
-  const passo = t => {
-    if (id !== deslize) return;
-    const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 2);
-    visto = [de[0] + (p[0] - de[0]) * e, de[1] + (p[1] - de[1]) * e]; rumoVisto = rDe + dr * e;
-    if (seguir) { [cam.x, cam.y] = xy(visto); if (modo === 'direcao') cam.r = -rumoVisto * Math.PI / 180; }
-    desenhar(); if (k < 1) requestAnimationFrame(passo);
-  };
-  requestAnimationFrame(passo);
+  if (gira) rumo = direcao;
+  const intervalo = tFix ? agora - tFix : 1000; tFix = agora;
+  const ms = navegando ? Math.max(350, Math.min(1600, intervalo * 1.1)) : 320;
+  mov = { de, p, rDe, dr: gira ? ((rumo - rDe + 540) % 360) - 180 : 0, gira, t0: agora, ms };
+  rodar();
   andou(p);
+}
+const rodar = () => { if (!laco) laco = requestAnimationFrame(quadro); };
+function quadro(t) {
+  laco = 0;
+  const dt = Math.min(400, Math.max(1, t - (tQuadro || t - 16))); tQuadro = t; // se o celular engasgar, a câmera alcança no quadro seguinte
+  let mexe = false;
+  if (mov) {
+    const k = Math.min(1, (t - mov.t0) / mov.ms), e = navegando ? k : 1 - Math.pow(1 - k, 2);
+    visto = [mov.de[0] + (mov.p[0] - mov.de[0]) * e, mov.de[1] + (mov.p[1] - mov.de[1]) * e];
+    if (mov.gira) rumoVisto = mov.rDe + mov.dr * e;
+    if (k < 1) mexe = true; else mov = null;
+  }
+  if (seguir && visto) {
+    const [x, y] = xy(visto), a = 1 - Math.exp(-dt / 110);
+    cam.x += (x - cam.x) * a; cam.y += (y - cam.y) * a;
+    if (Math.hypot(x - cam.x, y - cam.y) * cam.z > 0.2) mexe = true; else { cam.x = x; cam.y = y; }
+    if (modo === 'direcao') {
+      const alvo = -rumoVisto * Math.PI / 180, d = ((((alvo - cam.r) % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI)) - Math.PI;
+      if (Math.abs(d) > 0.002) { cam.r += d * (1 - Math.exp(-dt / 260)); mexe = true; } else cam.r = alvo;
+    }
+  }
+  pintar(t);
+  if (mexe) rodar();
 }
 // bússola do celular: parado (ou devagar) a seta segue pra onde o celular aponta; andando, vale o rumo do GPS
 let bussolaOn = false, andandoAte = 0;
@@ -780,9 +1014,8 @@ function ligarBussola() {
       if (performance.now() < andandoAte) return; // em movimento o GPS manda
       const d = ((h - rumoVisto + 540) % 360) - 180;
       if (Math.abs(d) < 1.5) return;
-      rumo = h; rumoVisto += d * 0.35; // suaviza o tremido da bússola
-      if (seguir && modo === 'direcao') cam.r = -rumoVisto * Math.PI / 180;
-      desenhar();
+      rumo = h; rumoVisto += d * 0.35; // suaviza o tremido da bússola (o giro do mapa amortece no quadro)
+      rodar();
     };
     addEventListener('deviceorientationabsolute', ler); addEventListener('deviceorientation', ler);
   };
@@ -805,8 +1038,9 @@ function ligarGps() {
     let d = andando ? g.coords.heading : null;
     if (d == null && !bussolaOn && ultima && Rotas.metros(ultima, p) > 8) d = azim(ultima, p);
     if (!ultima || Rotas.metros(ultima, p) > 8) ultima = p;
+    if (navegando) pontoCorrida(p, g.coords.accuracy, g.coords.speed, g.timestamp || Date.now());
     posicao(p, d);
-    if (destino && !navegando && precisao <= 60 && (!rota || Rotas.metros(p, rota.linha[0]) > 80)) calcular();
+    if (destino && !navegando && !origemFixa && precisao <= 60 && (!rota || Rotas.metros(p, rota.linha[0]) > 80)) calcular();
     else if (primeira && destino && !rota) calcular();
     else if (primeira && !destino) { const [x, y] = xy(p); voar({ x, y, z: 0.6 }, 800); }
   }, erro => { desligarGps(); folha(titulo('Sem GPS aqui'), el('p', erro.code === 1 ? 'A localização foi negada ou está bloqueada. Toque no mapa e escolha "Sair daqui".' : 'Não consegui sua posição agora.', 'sub'), acoes(['Fechar', () => folha()])); }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 });
@@ -815,6 +1049,7 @@ function desligarGps() { if (vigia != null) navigator.geolocation.clearWatch(vig
 
 addEventListener('resize', ajustar);
 aplicarTema(); chips(); ajustar();
+if (self.VERSAO) $('.marca span').textContent = 'GPS · BAURU · ' + self.VERSAO.replace('pantera-', ''); // pra conferir de olho que atualizou
 document.fonts?.ready.then(desenhar);
 
 // ================= cadeado (só na versão do site) =================
