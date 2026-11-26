@@ -599,6 +599,7 @@ function calcular(silencioso) {
   // rota confirmada no Google: só entre dois destinos salvos, sem marcas novas no caminho
   const salvo = q => lugares().find(([, p]) => p && Rotas.metros(p, q) < 200);
   const daqui = salvo(de), praLa = salvo(destino);
+  ruaDestino = (praLa && (FIXOS.find(x => x[0] === praLa[0]) || [])[2]) || '';
   if (daqui && praLa && daqui !== praLa && !navegando) {
     const rua = (FIXOS.find(x => x[0] === praLa[0]) || [])[2];
     rota = Rotas.rota(G, daqui[1], praLa[1], { garupa, rua });
@@ -615,7 +616,7 @@ function calcular(silencioso) {
   const aviso = (t, tipo) => { const d = el('div', '', 'aviso ' + tipo); d.innerHTML = ic(tipo === 'alerta' ? 'alerta' : tipo === 'ok' ? 'ok' : 'info'); d.append(el('span', t)); avisos.push(d); };
   const ev = Object.entries(rota.evitadas), rp = Object.entries(rota.rapidas);
   if (rota.validada) aviso('Confirmada quadra por quadra no Google: sem contramão (' + new Date(MAPA.validado).toLocaleDateString('pt-BR') + ')', 'ok');
-  else aviso('Rota ainda não confirmada quadra por quadra: navegue pelo Google Maps', 'alerta');
+  else aviso('Rota ainda não conferida quadra por quadra no Google: fique de olho nas placas de mão', 'alerta');
   for (const [n, m] of ev) aviso(`Passa ${km(m)} pela ${n}`, 'alerta');
   if (rp.length) aviso(`Vias principais ou acima de 40: ${rp.map(([n, m]) => n + ' (' + km(m) + ')').join(', ')}`, 'alerta');
   if (!ev.length && !rp.length) aviso('Sem avenidas da sua lista no caminho', 'ok');
@@ -623,12 +624,12 @@ function calcular(silencioso) {
   if (rota.subidas.length > 3) aviso(`Mais ${rota.subidas.length - 3} trechos de subida`, 'info');
   if (rota.cargas > 0.45) aviso(rota.cargas > 1 ? 'Não cabe em uma carga' : 'Ida e volta pode não caber em uma carga: confira a bateria', 'alerta');
   if (!rota.validada) for (const [n, m] of Object.entries(rota.duvidas)) aviso(`Mão não confirmada no mapa: ${n} (${km(m)}). Confira a placa`, 'alerta');
-  if (!rota.validada) aviso('O Google Maps respeita a mão das ruas; este app só escolhe o caminho longe das avenidas.', 'info');
+  if (!rota.validada) aviso('Na dúvida da mão, o botão Google Maps abre este mesmo caminho por lá.', 'info');
   if (pico) aviso('Horário de pico: priorizei ruas mais calmas', 'info');
   const leg = el('div', '', 'legenda'); leg.innerHTML = '<span><i></i>Rota</span><span><i class="tr"></i>Avenida que você evita</span>';
-  folha(titulo(nomeDestino), num, ...avisos, leg, rota.validada
-    ? acoes(['Navegar', comecar, 'pri'], ['Google Maps', abrirGoogle], ['Fazer a volta', inverter], botaoGarupa(), ['Fechar', limpar])
-    : acoes(['Navegar pelo Google Maps', abrirGoogle, 'pri'], ['Fazer a volta', inverter], botaoGarupa(), ['Fechar', limpar]));
+  // Navegar aparece sempre; quando a rota não foi conferida no Google, o aviso de cima diz pra olhar as placas
+  folha(titulo(nomeDestino), num, ...avisos, leg,
+    acoes(['Navegar', comecar, 'pri'], ['Google Maps', abrirGoogle], ['Fazer a volta', inverter], botaoGarupa(), ['Fechar', limpar]));
   enquadrar();
 }
 // o Google respeita a mão das ruas; as paradas seguram ele no nosso caminho
@@ -680,25 +681,60 @@ function andou(p) {
     const d = Rotas.distSeg(p, rota.linha[i - 1], rota.linha[i]);
     if (d < melhor) { melhor = d; onde = acum[i - 1] + Math.min(Rotas.metros(rota.linha[i - 1], p), acum[i] - acum[i - 1]); }
   }
+  // chegou: perto do ponto, ou já na rua do destino a menos de 150 m (não manda dar volta no quarteirão)
+  const dFim = Rotas.metros(p, destino || rota.linha.at(-1));
+  const naRua = ruaDestino && dFim < 150 && ruaPerto(p) === ruaDestino;
+  if (dFim < 40 || naRua || acum.at(-1) - onde < 25) { if (!avisoAte || performance.now() > avisoAte) placaManobra('chegada', 'Chegou', nomeDestino); folhaNav(0); return; }
   fora = melhor > 40 ? fora + 1 : 0;
-  if (fora >= 3) { fora = 0; if (rota.validada) { placaManobra('fora', 'Fora da rota', 'Volte pro fio da rota ou abra no Google Maps', true); return; } calcular(true); return; }
+  if (fora >= 3) { fora = 0; if (reencontrar(p)) return andou(p); }
   const falta = acum.at(-1) - onde;
-  if (falta < 25) { placaManobra('chegada', 'Chegou', nomeDestino); return; }
+  folhaNav(falta);
+  if (avisoAte && performance.now() < avisoAte) return; // deixa o "Marcado" / "Recalculando" na tela
   const m = manobras.find(m => m.s > onde + 5) || manobras.at(-1);
   placaManobra(m.icone, km(m.s - onde), m.acao + (m.rua ? (m.icone === 'chegada' ? ': ' : ' na ') + m.rua : ''));
-  folha(titulo(`${km(falta)} · ${Math.max(1, Math.round(falta / 1000 / 25 * 60))} min`), el('p', 'até ' + nomeDestino, 'sub'),
-    acoes(['Parar', () => { parar(); calcular(); }], ['Buraco aqui', () => marcar2('buraco')], ['Interditado', () => marcar2('interditado')], ['Contramão aqui', () => marcar2('contramao')]));
+}
+// o card de baixo é montado uma vez só; a cada GPS só o texto muda (redesenhar engolia o toque nos botões)
+let navTit = null, avisoAte = 0, ruaDestino = '', rotaBase = null;
+function folhaNav(falta) {
+  if (!navTit || !navTit.isConnected) {
+    navTit = titulo('');
+    folha(navTit, el('p', 'até ' + nomeDestino, 'sub'),
+      acoes(['Parar', () => { parar(); calcular(); }], ['Buraco aqui', () => marcar2('buraco')], ['Interditado', () => marcar2('interditado')], ['Contramão aqui', () => marcar2('contramao')]));
+  }
+  navTit.textContent = falta ? `${km(falta)} · ${Math.max(1, Math.round(falta / 1000 / 25 * 60))} min` : 'Chegou';
+}
+// saiu da rota: acha o caminho de volta pra rota combinada (o ponto da frente que der menos volta) e segue dali
+function reencontrar(p) {
+  const base = rotaBase || rota, l = base.linha, ac = [0];
+  for (let i = 1; i < l.length; i++) ac[i] = ac[i - 1] + Rotas.metros(l[i - 1], l[i]);
+  let perto = 0, md = 1e9; for (let i = 0; i < l.length; i++) { const d = Rotas.metros(p, l[i]); if (d < md) { md = d; perto = i; } }
+  // candidatos: começo de cada trecho da rota, da parte mais próxima de mim pra frente
+  const cands = []; let k = 0;
+  for (let j = 0; j < base.partes.length; j++) { if (k >= perto - 2 && Rotas.metros(p, l[k]) < 2500) cands.push({ k, j }); k += base.partes[j].g.length - 1; }
+  let melhor = null;
+  for (const c of cands.filter((_, i, a) => i % Math.max(1, Math.ceil(a.length / 12)) === 0 || i === a.length - 1)) {
+    const r = Rotas.rota(G, p, l[c.k], { garupa, marcas }); if (!r) continue;
+    const total = r.m * 1.15 + (ac.at(-1) - ac[c.k]);
+    if (!melhor || total < melhor.total) melhor = { total, r, c };
+  }
+  avisoAte = performance.now() + 2500; placaManobra('retorno', 'Recalculando', 'Voltando pra rota combinada');
+  if (!melhor) { calcular(true); return false; }
+  const { r, c } = melhor;
+  rota = { ...base, linha: [...r.linha, ...l.slice(c.k + (r.linha.length ? 1 : 0))], partes: [...r.partes, ...base.partes.slice(c.j)], m: r.m + ac.at(-1) - ac[c.k] };
+  preparar(); desenhar(); return true;
 }
 function marcar2(tipo) {
+  if (!eu) return;
   const a = (rumo * Math.PI) / 180, d = tipo === 'interditado' ? 25 : 0;
   marcas.push({ tipo, rumo, quando: Date.now(), p: [eu[0] + d * Math.cos(a) / KY, eu[1] + d * Math.sin(a) / KX] }); gravar('marcas', marcas);
-  const m = $('#manobra'); const antes = m.innerHTML; placaManobra('ok', 'Marcado', ({ buraco: 'Buraco', interditado: 'Interditado', contramao: 'Contramão' })[tipo] + ' salvo neste celular');
-  setTimeout(() => { if (m.innerHTML.includes('Marcado')) m.innerHTML = antes; }, 2500);
-  if (tipo !== 'buraco') calcular(true);
+  avisoAte = performance.now() + 2500;
+  placaManobra('ok', 'Marcado', ({ buraco: 'Buraco', interditado: 'Interditado', contramao: 'Contramão' })[tipo] + ' salvo neste celular');
+  if (navigator.vibrate) navigator.vibrate(60);
+  if (tipo !== 'buraco') { calcular(true); rotaBase = rota; }
   desenhar();
 }
 async function comecar() {
-  parado(); recentrando++; clearTimeout(voltaT); navegando = true; seguir = true; fora = 0; modo = 'direcao'; document.body.classList.add('nav'); cam.z = 1.4;
+  parado(); recentrando++; clearTimeout(voltaT); rotaBase = rota; navTit = null; avisoAte = 0; navegando = true; seguir = true; fora = 0; modo = 'direcao'; document.body.classList.add('nav'); cam.z = 1.4;
   try { trava = await navigator.wakeLock.request('screen'); } catch {}
   if (new URLSearchParams(location.search).has('sim')) simular(); else ligarGps();
   posicao(eu || rota.linha[0], azim(rota.linha[0], rota.linha[1] || rota.linha[0]));
