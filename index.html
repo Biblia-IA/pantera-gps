@@ -48,7 +48,12 @@ svg.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;str
 .busca svg{color:var(--aco);flex:none}
 #busca{flex:1;min-width:0;height:100%;outline:0;font-size:16px;font-weight:300;-webkit-user-select:text;user-select:text}
 #busca::placeholder{color:var(--mut)}
-#linhaDe:not([hidden])~.busca #busca::placeholder{color:var(--tx)}
+#topo:has(#linhaDe:not([hidden])) #busca::placeholder{color:var(--tx)}
+/* "Saindo de": linha menor, embaixo do destino, pra não roubar o lugar da busca */
+#linhaDe{height:38px;padding:0 6px 0 14px;border-radius:10px;gap:8px}
+#linhaDe .rot{width:auto;font-size:7.5px;color:var(--fraco)}
+#linhaDe #de{font-size:16px;color:var(--mut)}
+#linhaDe #de::placeholder{color:var(--mut)}
 .busca .rot{flex:none;width:34px;font:400 8.5px Michroma,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--mut)}
 .busca .rot[hidden],#lupa[hidden]{display:none}
 #linhaDe[hidden]{display:none}
@@ -56,7 +61,9 @@ svg.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;str
 #de::placeholder{color:var(--tx)}
 #deLimpa{flex:none;width:32px;height:32px;display:grid;place-items:center;color:var(--aco)}
 #deLimpa[hidden]{display:none}
-#achados{border-radius:12px;max-height:46vh;overflow:auto}
+#achados{border-radius:12px;max-height:38vh;overflow:auto}
+/* 27/11: com resultados na tela, o cartão da rota e os botões laterais saem da frente */
+body:has(#achados button) #folha,body:has(#achados button) #trilho{visibility:hidden}
 #achados:empty{display:none}
 #achados button{display:block;width:100%;text-align:left;padding:11px 14px;border-bottom:1px solid var(--linha)}
 #achados button:last-child{border:0}
@@ -179,7 +186,7 @@ body.nav #gps{bottom:auto;top:calc(env(safe-area-inset-top) + 104px)}
 </style>
 </head>
 <body>
-<script>self.VERSAO='pantera-v29';(function(){function checar(){fetch('versao.txt?x='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(v){v=(v||'').trim();if(!v||v===self.VERSAO)return;var k='tentou-'+v;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){}location.replace(location.pathname+'?v='+v.replace('pantera-',''))}).catch(function(){})}checar();document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')checar()})})();</script>
+<script>self.VERSAO='pantera-v30';(function(){function checar(){fetch('versao.txt?x='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(v){v=(v||'').trim();if(!v||v===self.VERSAO)return;var k='tentou-'+v;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){}location.replace(location.pathname+'?v='+v.replace('pantera-',''))}).catch(function(){})}checar();document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')checar()})})();</script>
 <canvas id="c"></canvas>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -196,8 +203,8 @@ body.nav #gps{bottom:auto;top:calc(env(safe-area-inset-top) + 104px)}
 
 <header id="topo">
   <div class="marca"><svg class="so-escuro"><use href="#p7"/></svg><svg class="so-claro"><use href="#p7d"/></svg><b class="cromo">PANTERA</b><span>GPS · BAURU</span></div>
-  <label class="busca placa" id="linhaDe" hidden><span class="rot">De</span><input id="de" placeholder="Minha localização" autocomplete="off"><button id="deLimpa" aria-label="Sair da minha localização" hidden><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button></label>
-  <label class="busca placa"><span class="rot" id="rotPara" hidden>Para</span><svg class="ic" id="lupa" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg><input id="busca" placeholder="Rua, lugar ou coordenada" autocomplete="off"></label>
+  <label class="busca placa"><svg class="ic" id="lupa" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg><input id="busca" placeholder="Rua, lugar ou coordenada" autocomplete="off"></label>
+  <label class="busca placa" id="linhaDe" hidden><span class="rot">Saindo de</span><input id="de" placeholder="Minha localização" autocomplete="off"><button id="deLimpa" aria-label="Voltar pra minha localização" hidden><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button></label>
   <div id="achados" class="placa"></div>
   <div id="chips"></div>
 </header>
@@ -221,9 +228,9 @@ body.nav #gps{bottom:auto;top:calc(env(safe-area-inset-top) + 104px)}
 <button id="bCentro" aria-label="Recentralizar" hidden><svg viewBox="0 0 24 24"><path d="M12 2 20 21 12 16 4 21Z" fill="currentColor"/></svg>Recentralizar</button>
 <section id="folha" class="placa"></section>
 
-<script src="cadeado.js?v=v29"></script>
-<script src="dados.js?v=v29"></script>
-<script src="rotas.js?v=v29"></script>
+<script src="cadeado.js?v=v30"></script>
+<script src="dados.js?v=v30"></script>
+<script src="rotas.js?v=v30"></script>
 <script>
 'use strict';
 const $ = s => document.querySelector(s);
@@ -321,7 +328,7 @@ function ui() {
   $('#bMarcas').hidden = !marcas.length || navegando;
   // com destino escolhido aparece a linha "De" (partida) em cima do "Para", e o trilho desce junto
   const comDe = !!destino && !navegando;
-  if ($('#linhaDe').hidden === comDe) { $('#linhaDe').hidden = !comDe; $('#rotPara').hidden = !comDe; $('#lupa').hidden = comDe; mostrarPartida(); }
+  if ($('#linhaDe').hidden === comDe) { $('#linhaDe').hidden = !comDe; mostrarPartida(); }
   const ph = comDe ? nomeDestino : 'Rua, lugar ou coordenada'; if ($('#busca').placeholder !== ph) $('#busca').placeholder = ph;
   $('#trilho').style.top = (navegando ? 122 : Math.max(122, $('#chips').getBoundingClientRect().bottom + 10)) + 'px';
   $('#bSom').hidden = !navegando; $('#bSom').classList.toggle('mudo', !voz);
@@ -514,6 +521,8 @@ const solta = e => {
   else if (!dedos.size && mexeu > 8 && mexeu < 99 && e.timeStamp - tAntes < 80 && Math.hypot(...vel) > 0.15) embalar(...vel);
 };
 cv.addEventListener('pointerup', solta); cv.addEventListener('pointercancel', solta);
+// 27/11: tocar no mapa fecha a busca e o teclado (e devolve o cartão da rota)
+cv.addEventListener('pointerdown', () => { $('#achados').replaceChildren(); $('#busca').value = ''; $('#busca').blur(); $('#de').blur(); });
 cv.addEventListener('wheel', e => { e.preventDefault(); zoom(e.deltaY < 0 ? 1.2 : 1 / 1.2); }, { passive: false });
 const limZ = z => Math.max(0.03, Math.min(4, z));
 const zoom = f => { cam.z = limZ(cam.z * f); desenhar(); };
@@ -607,7 +616,7 @@ const RUAS = MAPA.nomes.filter(Boolean);
 const LUGARES = (MAPA.lugares || []).map(([n, la, lo, rua]) => [n, [la / 1e5, lo / 1e5], rua]);
 function abrirAchado(n, p) {
   $('#busca').value = ''; $('#achados').replaceChildren(); $('#busca').blur();
-  const [x, y] = xy(p); voar({ x, y, z: 0.9 }, 650); seguir = false; destino = p; rota = null;
+  const [x, y] = xy(p); voar({ x, y, z: 0.9 }, 650); seguir = false; destino = p; nomeDestino = n; rota = null;
   folha(titulo(n), el('p', 'Confira o ponto no mapa.', 'sub'), acoes(['Ir até aqui', () => irPara(n, p), 'pri'], ['Salvar lugar', () => salvar(p)], ['Fechar', limpar]));
   desenhar();
 }
